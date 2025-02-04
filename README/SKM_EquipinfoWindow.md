@@ -2,7 +2,7 @@
 
 # v1.0.0
 
-## [最新版をダウンロード](https://github.com/fishs075/master/SKM_EquipinfoWindow.js)
+### [最新版をダウンロード](https://github.com/fishs075/master/SKM_EquipinfoWindow.js)
 
 ## 概要
 
@@ -89,7 +89,7 @@
 
 ## 更新履歴
 
--   v1.0.0 (2024/XX/XX)
+-   v1.0.0 (2025/XX/XX)
     -   初版リリース
     -   基本機能の実装
     -   バグ修正と最適化
