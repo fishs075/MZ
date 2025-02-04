@@ -1,6 +1,8 @@
 # RPG ツクール MZ 用装備情報プレビュープラグイン
 
-## v1.0.0
+# v1.0.0
+
+# [最新版をダウンロード](https://github.com/fishs075/SKM_EquipinfoWindow.js)
 
 ## 概要
 
