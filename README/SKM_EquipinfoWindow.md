@@ -4,7 +4,7 @@
 
 [最新版をダウンロード](https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js)
 
-![画像名](././images/sanple.png)
+![画像名](../images/sanple.png)
 
 ## 概要
 
