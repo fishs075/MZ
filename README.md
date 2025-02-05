@@ -1,8 +1,6 @@
 # ようこそ、RPG ツクール MZ のプラグイン公開所へ
 
-This is your README. READMEs are where you can communicate what your project is and how to use it.
-
-Write your name on line 6, save it, and then head back to GitHub Desktop.
+## プラグイン一覧
 
 -   [装備情報プレビュープラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md)
 
