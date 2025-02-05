@@ -5,7 +5,9 @@
 [最新版をダウンロード](https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js)
 
 <img src="../images/SKM_EquipinfoWindow1.png" width="400">
-
+<img src="../images/SKM_EquipinfoWindow2.png" width="400">
+<img src="../images/SKM_EquipinfoWindow3.png" width="400">
+<img src="../images/SKM_EquipinfoWindow4.png" width="400">
 ## 概要
 
 このプラグインは、メニュー画面、装備品選択画面、ショップ画面で装備品にカーソルを合わせた際に、詳細な情報をプレビューウィンドウで表示する機能を追加します。<br>
