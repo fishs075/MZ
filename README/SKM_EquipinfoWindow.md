@@ -75,7 +75,7 @@ https://github.com/user-attachments/assets/85f02d46-ce8a-4699-ada1-f8e725fd9b3f
     - 特殊能力の表示名も変更可能
 3. 必要に応じてメモ欄に追加特徴を記述
     - 形式: `<trait:表示したい特徴テキスト>`
-    - `<special_trait:表示したい特徴テキスト>`
+    - `<special_trait:強調したい特徴テキスト>`
 
 ## 注意事項
 
