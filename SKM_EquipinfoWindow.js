@@ -66,8 +66,8 @@
  *
  * ■主な機能
  * 1. 装備品の基本パラメータ表示
- *    - 攻撃力、防御力、魔法力などの基本パラメータ
- *    - 追加パラメータ（HP、MP、敏捷性、運）
+ *    - 攻撃力、防御力、魔法力、魔法防御の装備の基本パラメータ（4つでセット表示。全て0なら表示しない）
+ *    - 追加パラメータ（最大HP、最大MP、敏捷性、運）
  *
  *    プラグインパラメータで、各能力値の表示名を変更できます。
  *    例：
@@ -1017,13 +1017,15 @@
             if (this._item.params[param.id] !== 0) {
                 hasDrawnAnyParams = true;
                 this.changeTextColor(this.paramLabelColor());
-                this.drawText(param.label, x, currentY, paramWidth);
+                // ラベルを左側に表示
+                this.drawText(param.label, x, currentY, paramWidth * 2);
                 this.changeTextColor(this.paramValueColor());
+                // 値を右側に表示（2カラム分の幅を使用）
                 this.drawText(
                     String(this._item.params[param.id]),
                     x,
                     currentY,
-                    paramWidth,
+                    paramWidth * 2,
                     "right"
                 );
                 currentY += this.lineHeight();
