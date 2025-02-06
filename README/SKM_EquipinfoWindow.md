@@ -72,7 +72,7 @@
 
 ## 実装例
 
-![実装例](../images/SKM_EquipinfoWindow1.gif)
+https://github.com/user-attachments/assets/85f02d46-ce8a-4699-ada1-f8e725fd9b3f
 
 ## 注
 
