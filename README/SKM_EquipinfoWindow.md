@@ -72,10 +72,7 @@
 
 ## 実装例
 
-<video width="640" height="480" controls>
-  <source src="../images/SKM_EquipinfoWindow1.mp4" type="video/mp4">
-  お使いのブラウザは動画タグをサポートしていません。
-</video>
+![実装例](../images/SKM_EquipinfoWindow1.gif)
 
 ## 注
 
