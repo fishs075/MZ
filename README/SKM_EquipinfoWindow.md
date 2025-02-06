@@ -70,6 +70,13 @@
 属性耐性：+20%<br>
 命中率：+5%<br>
 
+## 実装例
+
+<video width="640" height="480" controls>
+  <source src="../images/SKM_EquipinfoWindow1.mp4" type="video/mp4">
+  お使いのブラウザは動画タグをサポートしていません。
+</video>
+
 ## 注
 
 攻撃時スキルは特徴に設定しても表示されないので、メモ欄に記述してください。
