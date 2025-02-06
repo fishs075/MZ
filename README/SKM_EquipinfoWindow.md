@@ -89,7 +89,7 @@ https://github.com/user-attachments/assets/85f02d46-ce8a-4699-ada1-f8e725fd9b3f
 
 ## 更新履歴
 
--   v1.0.0 (2025/XX/XX)
+-   v1.0.0 (2025/02/06)
     -   初版リリース
     -   基本機能の実装
     -   バグ修正と最適化
