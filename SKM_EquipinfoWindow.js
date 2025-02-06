@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc 装備情報プレビュープラグイン v1.0.0
+ * @plugindesc 装備情報プレビュー v1.0.0
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js
  *
