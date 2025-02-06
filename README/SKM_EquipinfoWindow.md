@@ -2,7 +2,7 @@
 
 # v1.0.0
 
-[最新版をダウンロード](https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js)
+[最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_EquipinfoWindow.js)
 
 <img src="../images/SKM_EquipinfoWindow1.png" width="400"><img src="../images/SKM_EquipinfoWindow2.png" width="400">
 <img src="../images/SKM_EquipinfoWindow3.png" width="400"><img src="../images/SKM_EquipinfoWindow4.png" width="400">
