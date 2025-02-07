@@ -112,6 +112,7 @@ https://github.com/user-attachments/assets/85f02d46-ce8a-4699-ada1-f8e725fd9b3f
 ## サポート
 
 不具合や要望がありましたら、GitHub の Issues にてご報告ください。
+ツクールフォーラムの公開スレッドでも対応しております
 
 ## 作者
 
