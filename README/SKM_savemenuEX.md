@@ -6,6 +6,9 @@ SKM_savemenuEX<br>
 SKM_SavemenuEX_op<br>
 [DL リンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX_op.js)
 
+<img src="../images/SKM_savemenuEX1.png" width="400"><img src="../images/SKM_savemenuEX2.png" width="400">
+<img src="../images/SKM_savemenuEX3.png" width="400">
+
 ## プラグイン概要
 
 このプラグインは、RPG ツクール MZ のセーブメニューをカスタマイズし、データ管理コマンドに置き換えるためのプラグインです。ユーザーは、セーブ、ロード、データ削除のコマンドを簡単に管理できます。<br>
