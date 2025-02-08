@@ -2,11 +2,11 @@
 
 ## プラグイン一覧
 
--   [装備情報プレビュープラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md)
+-   [装備情報プレビュー](https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md)
 
 -   [アクター容姿変更](https://github.com/fishs075/MZ/blob/main/README/SKM_ChangeActorImageSystem.md)
 
--   [セーブメニュー＞データ管理コマンド置き換えプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md)
+-   [セーブメニュー＞データ管理コマンド置き換え](https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md)
 
 ## 利用規約
 
