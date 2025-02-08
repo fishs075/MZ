@@ -1,10 +1,10 @@
 # セーブメニュー＞データ管理コマンド置き換えプラグイン
 
 SKM_savemenuEX<br>
-[DL リンク](https://github.com/fishs075/MZ/blob/main/SKM_savemenuEX.js)
+[DL リンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX.js)
 
 SKM_SavemenuEX_op<br>
-[DL リンク](https://github.com/fishs075/MZ/blob/main/SKM_savemenuEX_op.js)
+[DL リンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX_op.js)
 
 ## プラグイン概要
 
