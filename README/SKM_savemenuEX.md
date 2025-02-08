@@ -37,7 +37,8 @@ op
 ## インストール方法
 
 1. `SKM_savemenuEX.js`、`SKM_SavemenuEX_op.js`ファイルをプロジェクトの`js/plugins`フォルダにコピーします。
-2. RPG ツクール MZ のプラグイン管理から「SKM_savemenuEX」「SKM_SavemenuEX_op」を有効にします。 3.オプションプラグインを使用する場合は「SKM_savemenuEX」より下に配置してください
+2. RPG ツクール MZ のプラグイン管理から「SKM_savemenuEX」「SKM_SavemenuEX_op」を有効にします。
+3. オプションプラグインを使用する場合は「SKM_savemenuEX」より下に配置してください
 
 ## 使用方法
 
