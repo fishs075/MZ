@@ -4,11 +4,14 @@
 
 -   [装備情報プレビュープラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md)
 
+-   [セーブメニュー＞データ管理コマンド置き換えプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md)
+
 ## 利用規約
 
 -   クレジット表記は不要です
 -   商用利用可
 -   改変可
+
 -   素材単体の再配布禁止
 
 ## サポート
