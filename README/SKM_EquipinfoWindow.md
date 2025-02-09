@@ -1,11 +1,20 @@
 # 装備情報プレビュープラグイン
 
-# v1.0.0
-
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_EquipinfoWindow.js)
 
 <img src="../images/SKM_EquipinfoWindow1.png" width="400"><img src="../images/SKM_EquipinfoWindow2.png" width="400">
 <img src="../images/SKM_EquipinfoWindow3.png" width="400"><img src="../images/SKM_EquipinfoWindow4.png" width="400">
+
+## 更新履歴
+
+-   v1.0.1 (2025/02/09)
+    -   基礎パラメーターの表示色を 0 と負の値に対しても適用。ウインドウの幅を調整
+-   v1.0.0 (2025/02/06)
+
+    -   初版リリース
+    -   基本機能の実装
+
+    -   バグ修正と最適化
 
 ## 概要
 
@@ -94,17 +103,6 @@ https://github.com/user-attachments/assets/85f02d46-ce8a-4699-ada1-f8e725fd9b3f
 ## プラグインコマンド
 
 このプラグインには、プラグインコマンドはありません。
-
-## 更新履歴
-
--   v1.0.1 (2025/02/09)
-    -   基礎パラメーターの表示色を 0 と負の値に対しても適用。ウインドウの幅を調整
--   v1.0.0 (2025/02/06)
-
-    -   初版リリース
-    -   基本機能の実装
-
-    -   バグ修正と最適化
 
 ## 利用規約
 
