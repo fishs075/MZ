@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc 装備情報プレビュー v1.0.0
+ * @plugindesc 装備情報プレビュー v1.0.1
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js
  *
@@ -132,11 +132,13 @@
  * このプラグインには、プラグインコマンドはありません。
  *
  * ■更新履歴
+ * v1.0.1 (2025/02/09) - 基礎パラメーターの表示色を0と負の値に対しても適用。ウインドウの幅を調整
  * v1.0.0 (2025/02/06) - 初版リリース
  *
  * ■利用規約
  * ・クレジット表記は不要です
  * ・商用利用可
+
  * ・改変可
  * ・素材単体の再配布禁止
  *
@@ -975,9 +977,11 @@
                 // 左側のパラメータ
                 this.changeTextColor(this.basicParamLabelColor());
                 this.drawText(leftParam.label, x, currentY, paramWidth);
-                this.changeTextColor(this.paramValueColor());
+                const leftValue = this._item.params[leftParam.id];
+                // 基本パラメータは0も表示するので、専用の色取得関数を使用
+                this.changeTextColor(this.getBaseParamValueColor(leftValue));
                 this.drawText(
-                    String(this._item.params[leftParam.id]),
+                    String(leftValue),
                     x,
                     currentY,
                     paramWidth - this.textWidth(" "),
@@ -992,9 +996,11 @@
                     currentY,
                     paramWidth
                 );
-                this.changeTextColor(this.paramValueColor());
+                const rightValue = this._item.params[rightParam.id];
+                // 基本パラメータは0も表示するので、専用の色取得関数を使用
+                this.changeTextColor(this.getBaseParamValueColor(rightValue));
                 this.drawText(
-                    String(this._item.params[rightParam.id]),
+                    String(rightValue),
                     x + paramWidth,
                     currentY,
                     paramWidth,
@@ -1014,15 +1020,17 @@
         ];
 
         additionalParams.forEach((param) => {
-            if (this._item.params[param.id] !== 0) {
+            const value = this._item.params[param.id];
+            if (value !== 0) {
                 hasDrawnAnyParams = true;
                 this.changeTextColor(this.paramLabelColor());
                 // ラベルを左側に表示
                 this.drawText(param.label, x, currentY, paramWidth * 2);
-                this.changeTextColor(this.paramValueColor());
+                // 値の色を変更：正の値は青、負の値は赤、0は通常色
+                this.changeTextColor(this.getParamValueColor(value));
                 // 値を右側に表示（2カラム分の幅を使用）
                 this.drawText(
-                    String(this._item.params[param.id]),
+                    String(value),
                     x,
                     currentY,
                     paramWidth * 2,
@@ -1056,6 +1064,17 @@
         return currentY;
     };
 
+    // 基本パラメータ用の色取得関数を追加
+    Window_ItemPreview.prototype.getBaseParamValueColor = function (value) {
+        if (value > 0) {
+            return ColorManager.powerUpColor(); // 正の値は青
+        } else if (value < 0) {
+            return ColorManager.powerDownColor(); // 負の値は赤
+        } else {
+            return ColorManager.normalColor(); // 0は通常色（白）
+        }
+    };
+
     // カスタムサイズでアイコンを描画するメソッドを追加
     Window_ItemPreview.prototype.drawIconCustomSize = function (
         iconIndex,
@@ -1073,55 +1092,12 @@
 
     // ウィンドウの余白を小さく
     Window_ItemPreview.prototype.standardPadding = function () {
-        return 6; // 現在の値を確認して適切な値に調整
-    };
-
-    // ウィンドウの幅を調整するメソッドも修正
-    Window_ItemPreview.prototype.adjustWindowWidth = function () {
-        this.resetFontSettings();
-        this.contents.fontSize = this.standardFontSize();
-
-        // アイテム名の幅を計算
-        const iconSize = this._item.iconIndex
-            ? Math.floor(ImageManager.iconWidth * 0.65) + 8
-            : 0;
-        const nameWidth =
-            this.textWidth(this._item.name) +
-            iconSize +
-            this.standardPadding() * 2 +
-            16;
-
-        // 各パラメータの最大幅を計算
-        const maxValueWidth = this.textWidth("888"); // 3桁分の固定幅
-        const maxLabelWidth = Math.max(
-            this.textWidth(attackLabel() + " "),
-            this.textWidth(magicLabel() + " "),
-            this.textWidth(defenseLabel() + " "),
-            this.textWidth(mdefenseLabel() + " ")
-        );
-
-        // 2列表示の必要幅を計算
-        const twoColumnWidth = (maxLabelWidth + maxValueWidth + 16) * 2 + 32;
-
-        // 必要な幅の大きい方を採用
-        const requiredWidth = Math.max(nameWidth, twoColumnWidth);
-
-        // 最小幅と最大幅の制限
-        const minWidth = Math.floor(Graphics.boxWidth * 0.25);
-        const maxWidth = Math.floor(Graphics.boxWidth * 0.5);
-
-        // 新しい幅を設定
-        const newWidth = Math.min(Math.max(requiredWidth, minWidth), maxWidth);
-
-        if (this.width !== newWidth) {
-            this.width = newWidth;
-            this.createContents();
-        }
+        return 6;
     };
 
     // パラメータ表示用の色設定を追加
     Window_ItemPreview.prototype.paramLabelColor = function () {
-        return ColorManager.systemColor(); // 通常のラベル色（#dcdcdc）
+        return ColorManager.systemColor();
     };
 
     Window_ItemPreview.prototype.paramValueColor = function () {
@@ -1133,35 +1109,31 @@
         return ColorManager.textColor(6); // 薄い黄色（#ffffcc）
     };
 
-    // ウィンドウサイズの調整メソッドを追加
+    // ウィンドウサイズの調整メソッドを修正
     Window_ItemPreview.prototype.adjustWindowSize = function (layout) {
-        // 基本の幅を計算
         this.resetFontSettings();
         this.contents.fontSize = this.standardFontSize();
 
-        // アイテム名の幅を計算
+        // 1. アイテム名の幅を計算
         const iconSize = this._item.iconIndex
             ? Math.floor(ImageManager.iconWidth * 0.65) + 8
             : 0;
         const nameWidth =
             this.textWidth(this._item.name) +
             iconSize +
-            this.standardPadding() * 2 +
-            16;
+            this.standardPadding() * 2;
 
-        // 各パラメータの最大幅を計算
-        const maxValueWidth = this.textWidth("8888"); // 4桁分の固定幅
+        // 2. 基礎パラメータの必要最小幅を計算
         const maxLabelWidth = Math.max(
             this.textWidth(attackLabel() + " "),
             this.textWidth(magicLabel() + " "),
             this.textWidth(defenseLabel() + " "),
             this.textWidth(mdefenseLabel() + " ")
         );
+        const maxValueWidth = this.textWidth("888"); // 3桁分の固定幅
+        const baseParamWidth = (maxLabelWidth + maxValueWidth + 8) * 2 + 16; // 2列分の幅 + 中央スペース
 
-        // 2列表示時は2つのパラメータカラムの幅が必要
-        const parameterWidth = (maxLabelWidth + maxValueWidth + 16 + 16) * 1.5;
-
-        // 特徴の最大幅を計算
+        // 3. 特徴の最大幅を計算（変更なし）
         let maxTraitWidth = 0;
         if (this._item.traits) {
             this._item.traits.forEach((trait) => {
@@ -1173,51 +1145,46 @@
             });
         }
 
-        // 必要な幅の計算
+        // 4. レイアウトに応じた必要幅を計算
         let baseWidth;
         if (layout === "four-column") {
-            // 4列表示時は左側のパラメータ幅と右側の特徴幅を別々に計算
-            const leftColumnWidth = parameterWidth;
-            const rightColumnWidth = maxTraitWidth + this.standardPadding() * 4;
+            const leftColumnWidth = baseParamWidth;
+            const rightColumnWidth = maxTraitWidth + this.standardPadding();
             baseWidth = Math.max(
                 nameWidth,
-                leftColumnWidth + rightColumnWidth // 左列と右列の幅を合算
+                leftColumnWidth + rightColumnWidth + this.standardPadding() * 2
             );
         } else {
-            // 2列表示時
             baseWidth = Math.max(
                 nameWidth,
-                parameterWidth,
-                maxTraitWidth + this.standardPadding() * 4
+                baseParamWidth + this.standardPadding() * 2,
+                maxTraitWidth + this.standardPadding() * 2
             );
         }
 
-        // 基準解像度（816）に対する現在の解像度の比率を計算
-        const BASE_WIDTH = 816;
-        const resolutionRatio = Graphics.boxWidth / BASE_WIDTH;
-
-        // 解像度に応じてウィンドウの比率を調整
+        // 5. 解像度に応じた最小・最大幅の制限
         let minRatio, maxRatio;
         if (Graphics.boxWidth <= 816) {
-            // デフォルト (816x624)以下
             minRatio = layout === "four-column" ? 0.35 : 0.2;
             maxRatio = layout === "four-column" ? 0.6 : 0.4;
         } else if (Graphics.boxWidth <= 1280) {
-            // HD (1280x720)以下
             minRatio = layout === "four-column" ? 0.25 : 0.15;
             maxRatio = layout === "four-column" ? 0.4 : 0.3;
         } else {
-            // フルHD (1920x1080)など、より大きな解像度
             minRatio = layout === "four-column" ? 0.2 : 0.12;
             maxRatio = layout === "four-column" ? 0.35 : 0.25;
         }
 
-        // 最小幅と最大幅の制限を設定
         const minWidth = Math.floor(Graphics.boxWidth * minRatio);
         const maxWidth = Math.floor(Graphics.boxWidth * maxRatio);
-        baseWidth = Math.min(Math.max(baseWidth, minWidth), maxWidth);
 
-        // 高さを計算
+        // 6. 最終的な幅を決定（nameWidthを最小値として保証）
+        baseWidth = Math.max(
+            Math.min(Math.max(baseWidth, minWidth), maxWidth),
+            nameWidth
+        );
+
+        // 高さの計算
         const lineCount = this.calcLineCount(layout);
         const height = this.calcHeight(lineCount);
 
@@ -2049,5 +2016,16 @@
 
         // 基礎パラメータ（攻撃力、魔力、防御力、魔法防御力）のいずれかが0でないかチェック
         return [2, 3, 4, 5].some((id) => this._item.params[id] !== 0);
+    };
+
+    // パラメータ値の色を取得する関数を追加
+    Window_ItemPreview.prototype.getParamValueColor = function (value) {
+        if (value > 0) {
+            return ColorManager.powerUpColor(); // 正の値は青
+        } else if (value < 0) {
+            return ColorManager.powerDownColor(); // 負の値は赤
+        } else {
+            return this.paramValueColor(); // 0は通常色
+        }
     };
 })();
