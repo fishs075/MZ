@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc 装備情報プレビュー v1.0.1
+ * @plugindesc 装備情報プレビュー v1.0.2
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js
  *
@@ -56,8 +56,16 @@
  * @off 有効度表示
  * @default true
  *
+ * @param WindowPosition
+ * @text ウィンドウ表示位置
+ * @type select
+ * @option 左寄せ
+ * @value left
+ * @option 右寄せ
+ * @value right
+ * @desc プレビューウィンドウの表示位置を設定します。
+ * @default left
  *
-
  * @help SKM_EquipinfoWindow.js
  *
  * ■概要
@@ -132,6 +140,7 @@
  * このプラグインには、プラグインコマンドはありません。
  *
  * ■更新履歴
+ * v1.0.2 (2025/02/10) - ウィンドウの幅をパラメータに合わせて動的に変動するように変更。ウインドウの右配置を設定可能に。
  * v1.0.1 (2025/02/09) - 基礎パラメーターの表示色を0と負の値に対しても適用。ウインドウの幅パラメータ負3桁に合わせて調整
  * v1.0.0 (2025/02/06) - 初版リリース
  *
@@ -268,6 +277,9 @@
     const pluginName = "SKM_EquipinfoWindow";
     const parameters = PluginManager.parameters(pluginName);
     const showAsResistance = parameters.ShowAsResistance === "true";
+
+    // パラメータの解析部分に追加
+    const windowPosition = String(parameters.WindowPosition || "left");
 
     // 特徴コードを定数として定義
     const TRAIT_CODES = {
@@ -1123,16 +1135,35 @@
             this.textWidth(this._item.name) +
             iconSize +
             this.standardPadding() * 2;
-
         // 2. 基礎パラメータの必要最小幅を計算
         const maxLabelWidth = Math.max(
-            this.textWidth(attackLabel() + " "),
-            this.textWidth(magicLabel() + " "),
-            this.textWidth(defenseLabel() + " "),
-            this.textWidth(mdefenseLabel() + " ")
+            this.textWidth(attackLabel() + " ") +
+                (this._item.params[2] < 0 ? 8 : 0) +
+                Math.floor(
+                    Math.log10(Math.abs(this._item.params[2] || 1) + 1)
+                ) *
+                    8,
+            this.textWidth(magicLabel() + " ") +
+                (this._item.params[4] < 0 ? 8 : 0) +
+                Math.floor(
+                    Math.log10(Math.abs(this._item.params[4] || 1) + 1)
+                ) *
+                    8,
+            this.textWidth(defenseLabel() + " ") +
+                (this._item.params[3] < 0 ? 8 : 0) +
+                Math.floor(
+                    Math.log10(Math.abs(this._item.params[3] || 1) + 1)
+                ) *
+                    8,
+            this.textWidth(mdefenseLabel() + " ") +
+                (this._item.params[5] < 0 ? 8 : 0) +
+                Math.floor(
+                    Math.log10(Math.abs(this._item.params[5] || 1) + 1)
+                ) *
+                    8
         );
-        const maxValueWidth = this.textWidth("888"); // 3桁分の固定幅
-        const baseParamWidth = (maxLabelWidth + maxValueWidth + 8) * 2 + 16; // 2列分の幅 + 中央スペース
+        //const maxValueWidth = this.textWidth("888"); // 3桁分の固定幅
+        const baseParamWidth = (maxLabelWidth + 8) * 2 + 16; // 2列分の幅 + 中央スペース
 
         // 3. 特徴の最大幅を計算（変更なし）
         let maxTraitWidth = 0;
@@ -1728,7 +1759,6 @@
     ) {
         if (!sourceWindow || !this.contents) return;
 
-        // 既存の位置計算処理
         const padding = this.standardPadding() * 4;
         const itemCenterY = y + this.lineHeight() / 2;
         const screenCenterY = Graphics.boxHeight / 2;
@@ -1743,58 +1773,107 @@
               }
             : null;
 
-        // X座標の計算
+        // アイテムの表示列を判定（左列か右列か）
+        const isItemList = sourceWindow instanceof Window_ItemList;
+        const isRightColumn = isItemList && x > sourceWindow.width / 2;
+
+        // X座標の計算を表示位置設定に応じて変更
         let newX;
-        if (sourceRect) {
-            const rightEdgeX = x + this.width + padding;
+        if (windowPosition === "right") {
+            if (sourceRect) {
+                if (isItemList) {
+                    // アイテムメニューの場合
+                    if (isRightColumn) {
+                        // 右列のアイテムの場合
+                        newX =
+                            sourceRect.x +
+                            sourceRect.width -
+                            this.width -
+                            padding;
+                    } else {
+                        // 左列のアイテムの場合
+                        newX =
+                            sourceRect.x +
+                            sourceRect.width / 2 -
+                            this.width -
+                            padding;
+                    }
+                } else {
+                    // 装備・ショップの場合（1列表示）
+                    const sourceRightEdge = sourceRect.x + sourceRect.width;
+                    newX = sourceRightEdge - this.width - padding;
+                }
 
-            if (rightEdgeX > Graphics.boxWidth - padding * 2) {
-                // 右端を超える場合は左側に表示
-                newX = x - this.width - padding;
+                // 左端を超える場合の調整
+                if (newX < padding) {
+                    if (isItemList && !isRightColumn) {
+                        // 左列の場合は右側に表示
+                        newX = sourceRect.x + sourceRect.width / 2 + padding;
+                    } else {
+                        newX = sourceRect.x + padding;
+                    }
+                }
             } else {
-                // それ以外は右側に表示
-                newX = x + padding;
-            }
-
-            // 左端を超える場合の調整
-            if (newX < padding) {
-                newX = x + padding;
+                newX = Graphics.boxWidth - this.width - padding;
             }
         } else {
-            newX = x + padding;
+            // 左寄せ表示の場合
+            if (sourceRect) {
+                if (isItemList) {
+                    // アイテムメニューの場合
+                    const columnWidth = sourceRect.width / 2;
+                    const rightEdgeX = isRightColumn
+                        ? x + this.width + padding
+                        : x + this.width + padding;
+
+                    if (
+                        rightEdgeX >
+                        sourceRect.x +
+                            (isRightColumn ? sourceRect.width : columnWidth) -
+                            padding
+                    ) {
+                        newX = x - this.width - padding;
+                    } else {
+                        newX = x + padding;
+                    }
+                } else {
+                    // 装備・ショップの場合（1列表示）
+                    const rightEdgeX = x + this.width + padding;
+                    if (rightEdgeX > Graphics.boxWidth - padding * 2) {
+                        newX = x - this.width - padding;
+                    } else {
+                        newX = x + padding;
+                    }
+                }
+
+                if (newX < padding) {
+                    newX = x + padding;
+                }
+            } else {
+                newX = x + padding;
+            }
         }
 
         // 画面端での最終調整
         newX = Math.min(newX, Graphics.boxWidth - this.width - padding);
         newX = Math.max(padding, newX);
 
-        // Y座標の計算を改善
+        // Y座標の計算（既存の処理を維持）
         let newY;
         const itemHeight = this.lineHeight();
 
         if (itemCenterY < screenCenterY) {
-            // 画面上部の場合
-            // アイテムの表示領域の下端から表示開始
             newY = y + itemHeight + padding;
-
-            // 下端チェック
             if (newY + this.height > Graphics.boxHeight - padding) {
-                // 下に入りきらない場合は上に表示
                 newY = y - this.height - padding / 2;
             }
         } else {
-            // 画面下部の場合
-            // アイテムの表示領域の上端から表示開始（より密着）
             newY = y - this.height + padding / 4;
-
-            // 上端チェック
             if (newY < padding) {
-                // 上に入りきらない場合は下に表示
                 newY = y + itemHeight + padding;
             }
         }
 
-        // 画面端での最終調整
         newY = Math.min(newY, Graphics.boxHeight - this.height - padding);
         newY = Math.max(padding, newY);
 
