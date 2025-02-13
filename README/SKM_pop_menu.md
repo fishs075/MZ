@@ -6,6 +6,8 @@
 
 <img src="../images/SKM_pop_menu1.png" width="400"><img src="../images/SKM_pop_menu2.png" width="400">
 
+https://github.com/user-attachments/assets/af670011-b23d-4e0a-ae7e-4e15a9d587a8
+
 ## 更新履歴
 
 -   v1.0.0 (2025/02/15)
