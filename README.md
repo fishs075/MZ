@@ -8,7 +8,7 @@
 
 -   [セーブメニュー＞データ管理コマンド置き換え](https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md)
 
--   [ポップメニューカスタマイズプラグイン]()
+-   [ポップメニューカスタマイズプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_pop_menu.md)
 
 ## 利用規約
 
