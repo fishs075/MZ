@@ -4,8 +4,7 @@
 
 <!-- ここに画像を入れる予定 -->
 
-<img src="../images/SKM_pop_menu1.png" width="400"><img src="../images/SKM_pop_menu2.png" width="400">  
-<img src="../images/SKM_pop_menu3.png" width="400"><img src="../images/SKM_pop_menu4.png" width="400">
+<img src="../images/SKM_pop_menu1.png" width="400"><img src="../images/SKM_pop_menu2.png" width="400">
 
 ## 更新履歴
 
