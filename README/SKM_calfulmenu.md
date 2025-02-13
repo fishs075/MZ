@@ -1,6 +1,6 @@
 # カラフルメニューカスタマイズプラグイン
 
-[最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_pop_menu.js)
+[最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulmenu.js)
 
 <!-- ここに画像を入れる予定 -->
 
