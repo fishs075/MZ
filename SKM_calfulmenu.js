@@ -2,7 +2,7 @@
  * @plugindesc ポップでカラフルなメニュー画面
  * @author さかなのまえあし
  * @target MZ
- * @url https://github.com/fishs075/MZ/blob/main/SKM_pop_menu.js
+ * @url https://github.com/fishs075/MZ/blob/main/SKM_calfulmenu.js
  *
  * @help SKM_calfulmenu.js
  *
