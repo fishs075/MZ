@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------------------
 /*:ja
  * @target MZ
- * @plugindesc アクター画像変更システム v1.3.0
+ * @plugindesc アクター画像変更システム v1.3.1
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/tree/main
  *
@@ -117,14 +117,23 @@
  *
  * @arg actorNumber
  * @text 読み込む画像数
+ * @desc 読み込む画像セットの数を設定します
  * @type number
+ * @min 1
  * @default 1
  *
  * @arg change_actorId
  * @text 変更するアクターID
- * @desc 変数使用可能(\v[n])
+ * @desc 変更するアクターのID
  * @type number
+ * @min 1
  * @default 1
+ *
+ * @arg useVariable
+ * @text 変数でIDを指定
+ * @desc アクターIDを変数の値で指定するか
+ * @type boolean
+ * @default false
  *
  * @arg actor_file_name
  * @text ファイル名
@@ -152,6 +161,12 @@
  * @type number
  * @min 1
  * @default 1
+ *
+ * @arg useVariable
+ * @text 変数でIDを指定
+ * @desc アクターIDを変数の値で指定するか
+ * @type boolean
+ * @default false
  *
  * @arg page
  * @text ページ番号
@@ -262,6 +277,7 @@
  * - 一応の対策として、画像がない場合は音がなって容姿の切り替えはできなくなっております。
  *
  * 【開発履歴】
+ * v1.3.1 2025/02/14 - アクターIDの変数指定を復活
  * v1.3.0 2025/02/09 - リファクタリング後、元の動作を再現するまで修正。機能追加。
  *
  * v1.2.0-1.2.7 (2023/5/24-10/2) - SakananomaeasiによるMZ移植と改修
@@ -622,6 +638,66 @@ let globalConfigCAIS = null;
                     return;
                 }
 
+                // アクター数の検証
+                const actorNumber = Number(args.actorNumber);
+                if (!Number.isInteger(actorNumber) || actorNumber < 1) {
+                    throw new Error(
+                        `読み込む画像数が不正です: ${args.actorNumber}\n` +
+                            `1以上の整数を指定してください。`
+                    );
+                }
+
+                // アクターIDの取得と検証
+                let actorId;
+                if (args.useVariable === "true") {
+                    // 変数からIDを取得
+                    const varValue = $gameVariables.value(
+                        Number(args.change_actorId)
+                    );
+                    if (!Number.isInteger(varValue) || varValue < 1) {
+                        throw new Error(
+                            `変数[${args.change_actorId}]の値が不正です: ${varValue}\n` +
+                                `アクターIDは1以上の整数である必要があります。`
+                        );
+                    }
+                    actorId = varValue;
+                } else {
+                    // 直接指定の場合
+                    actorId = Number(args.change_actorId);
+                    if (!Number.isInteger(actorId) || actorId < 1) {
+                        throw new Error(
+                            `アクターIDが不正です: ${args.change_actorId}\n` +
+                                `アクターIDは1以上の整数である必要があります。`
+                        );
+                    }
+                }
+
+                // アクターの存在確認
+                const actor = $gameActors.actor(actorId);
+                if (!actor) {
+                    throw new Error(
+                        `指定されたIDのアクターが存在しません: ${actorId}\n` +
+                            `データベースに登録されているアクターのIDを指定してください。`
+                    );
+                }
+
+                // 1ページの画像数の検証
+                if (args.image_load_maxsize !== "") {
+                    const maxImages = Number(args.image_load_maxsize);
+                    if (
+                        !Number.isInteger(maxImages) ||
+                        maxImages < 1 ||
+                        maxImages > 8
+                    ) {
+                        throw new Error(
+                            `1ページの画像数が不正です: ${args.image_load_maxsize}\n` +
+                                `1から8までの整数を指定してください。`
+                        );
+                    }
+                }
+
+                // パラメータを更新
+                args.change_actorId = String(actorId); // 変数で取得した場合に備えて文字列に変換
                 globalConfigCAIS.updateFromPluginCommand(args);
 
                 if (SceneManager._scene._choiceListWindow) {
@@ -630,8 +706,11 @@ let globalConfigCAIS = null;
 
                 SceneManager.push(Scene_ChangeActorImageSystem);
             } catch (e) {
-                // エラー処理は残しておく
-                throw e;
+                console.error(e.message);
+                if (Utils.isOptionValid("test")) {
+                    alert(e.message); // テストプレイ時はアラート表示
+                }
+                return;
             }
         }
     );
@@ -670,10 +749,59 @@ let globalConfigCAIS = null;
         "directChangeActorImage",
         function (args) {
             try {
-                // 引数の取得と変換
-                const actorId = Number(args.actorId);
+                // アクターIDの取得と変換
+                let actorId;
+                if (args.useVariable === "true") {
+                    // 変数からIDを取得
+                    const varValue = $gameVariables.value(Number(args.actorId));
+                    if (!Number.isInteger(varValue) || varValue < 1) {
+                        throw new Error(
+                            `変数[${args.actorId}]の値が不正です: ${varValue}\n` +
+                                `アクターIDは1以上の整数である必要があります。`
+                        );
+                    }
+                    actorId = varValue;
+                } else {
+                    // 直接指定の場合
+                    actorId = Number(args.actorId);
+                    if (!Number.isInteger(actorId) || actorId < 1) {
+                        throw new Error(
+                            `アクターIDが不正です: ${args.actorId}\n` +
+                                `アクターIDは1以上の整数である必要があります。`
+                        );
+                    }
+                }
+
+                // アクターの存在確認
+                const actor = $gameActors.actor(actorId);
+                if (!actor) {
+                    throw new Error(
+                        `指定されたIDのアクターが存在しません: ${actorId}\n` +
+                            `データベースに登録されているアクターのIDを指定してください。`
+                    );
+                }
+
+                // 他の引数の取得と変換
                 const page = Number(args.page);
+                if (!Number.isInteger(page) || page < 1) {
+                    throw new Error(
+                        `ページ番号が不正です: ${args.page}\n` +
+                            `ページ番号は1以上の整数である必要があります。`
+                    );
+                }
+
                 const inputIndex = Number(args.index);
+                if (
+                    !Number.isInteger(inputIndex) ||
+                    inputIndex < 1 ||
+                    inputIndex > 8
+                ) {
+                    throw new Error(
+                        `インデックスの値が不正です: ${inputIndex}\n` +
+                            `有効な値は1から8までの整数です。`
+                    );
+                }
+
                 const fileName = args.fileName || globalConfigCAIS.fileName;
                 const faceOnly =
                     args.faceOnly === ""
@@ -725,7 +853,6 @@ let globalConfigCAIS = null;
                 }
 
                 // アクター画像の更新
-                const actor = $gameActors.actor(actorId);
                 if (actor) {
                     // 顔画像は常に更新
                     actor.setFaceImage(imageName, index);
