@@ -2,6 +2,13 @@
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_GetInformation.js)
 
+<!-- ここに画像を入れる予定 -->
+
+<img src="../images/SKM_GetInformation.png" width="400">
+
+
+
+
 ## 概要
 RPGツクールMZ用の汎用ポップアップ表示プラグインです。アイテム入手や経験値獲得、レベルアップなどの際にポップアップ通知を表示する機能を提供します。
 
