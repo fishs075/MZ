@@ -1,19 +1,17 @@
 //
-//  汎用ポップアップコア ver1.1
+//  ポップアップ表示プラグイン ver1.0.0
 //
 // ------------------------------------------------------
 // Copyright (c) 2016 Yana
 // Released under the MIT license
 // http://opensource.org/licenses/mit-license.php
 // ------------------------------------------------------
-//
-// author Yana
-//
+
 
 /*:ja
  * @target MZ
  * @plugindesc 汎用的なポップアップの仕組みを提供するためのベースプラグインです。
- * @author Yana,さかなのまえあし（MZ移植）
+ * @author さかなのまえあし
  * 
  * 
  * 
