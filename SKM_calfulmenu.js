@@ -7,16 +7,16 @@
  * @help SKM_calfulmenu.js
  *
  * ■ 更新履歴
- * v1.0.1 (2025/02/16)
- * - 選択時の演出を3パターンに分離（アニメーション/発光のみ/なし）
- * - 発光パターンの追加（フロー、リップル）
- * - 枠線機能の追加
- * - コードの最適化
+ * v1.0.1 - v1.0.2 (2025/02/16)
+ *   - 選択時の演出を3パターンに分離（アニメーション/発光のみ/なし）
+ *   - 発光パターンの追加（フロー、リップル）
+ *   - 枠線機能の追加（アニメーション追従対応）
+ *   - コードの最適化
  *
  * v1.0.0 (2025/02/13)
- * - 初版リリース
- * - 基本機能の実装
- * - アニメーション機能の実装
+ *   - 初版リリース
+ *   - 基本機能の実装
+ *   - アニメーション機能の実装
  *
  * ■ プラグインの概要
  * メニュー画面をポップでカラフルな見た目にカスタマイズします。
@@ -201,6 +201,15 @@
  * @desc 枠線の色をHTMLカラーコードで指定します。BorderColorでカスタムを選択時のみ有効
  * @default #FFFFFF
  * @parent BorderColor
+ *
+ * @param AnimateBorder
+ * @text 枠線アニメーション
+ * @type boolean
+ * @on 追従する
+ * @off 固定
+ * @desc 枠線をアニメーションに追従させるか設定します。
+ * @default false
+ * @parent EnableBorder
  */
 
 /*~struct~MenuColors:
@@ -801,19 +810,22 @@
         const offset = isSelected
             ? style.getOffset(_animationCount, rect)
             : { x: 0, y: 0 };
-        const glowIntensity = isSelected
-            ? style.getGlowIntensity(_animationCount)
-            : 0;
-        const brightness = isSelected
-            ? style.getBrightness(_animationCount)
-            : 0;
 
         // コマンドのスタイルを取得
         const commandStyle = getCommandStyle(commandName);
 
+        // アニメーション用の矩形を計算
         const itemRect = {
             x: rect.x + 2 + offset.x,
             y: rect.y + 2 + offset.y,
+            width: rect.width - 4,
+            height: rect.height - 4,
+        };
+
+        // 枠線用の矩形を別途保持
+        const borderRect = animateBorder ? itemRect : {
+            x: rect.x + 2,
+            y: rect.y + 2,
             width: rect.width - 4,
             height: rect.height - 4,
         };
@@ -825,6 +837,14 @@
             itemRect.y -= scaleOffsetY;
             itemRect.width *= animationScale;
             itemRect.height *= animationScale;
+
+            // 枠線も追従する場合は同じスケールを適用
+            if (animateBorder) {
+                borderRect.x = itemRect.x;
+                borderRect.y = itemRect.y;
+                borderRect.width = itemRect.width;
+                borderRect.height = itemRect.height;
+            }
         }
 
         const ctx = this.contents.context;
@@ -844,13 +864,13 @@
         if (isSelected) {
             // 明るくするフィルター効果
             ctx.globalCompositeOperation = "overlay";
-            ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(_animationCount)})`;
             ctx.fill();
 
             // 光彩効果の追加
             ctx.globalCompositeOperation = "source-over";
             ctx.shadowColor = commandStyle.backgroundColor;
-            ctx.shadowBlur = glowIntensity;
+            ctx.shadowBlur = style.getGlowIntensity(_animationCount);
             ctx.fill();
 
             // 縁取り効果
@@ -876,9 +896,12 @@
         }
 
         if (enableBorder) {
-            // 通常の描画の後に枠線を追加
+            ctx.globalCompositeOperation = "source-over";
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = borderWidth;
+            // 枠線用の矩形を使用
+            ctx.beginPath();
+            this.drawRoundedRect(ctx, borderRect, radius);
             ctx.stroke();
         }
 
@@ -907,7 +930,7 @@
         }
     };
 
-    // 発光エフェクト時の描画処理を追加
+    // 発光エフェクト時の描画処理を修正
     Window_MenuCommand.prototype.drawGlowItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
@@ -951,20 +974,17 @@
             ctx.shadowBlur = glowIntensity;
             ctx.fill();
 
-            // 縁取り効果
-            ctx.strokeStyle = `rgba(255, 255, 255, 0.8)`;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
+            // カスタム発光エフェクト
             if (style.getGlowGradient) {
-                // カスタム発光エフェクト
                 ctx.globalCompositeOperation = "overlay";
                 ctx.fillStyle = style.getGlowGradient(ctx, itemRect, _animationCount);
                 ctx.fill();
             }
         }
 
+        // 枠線の描画を最後に行う
         if (enableBorder) {
+            ctx.globalCompositeOperation = "source-over";  // 合成モードをリセット
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = borderWidth;
             ctx.stroke();
@@ -1036,4 +1056,5 @@
     const borderColor = parameters.BorderColor === "custom" 
         ? parameters.CustomBorderColor 
         : parameters.BorderColor;
+    const animateBorder = parameters.AnimateBorder === "true";
 })();
