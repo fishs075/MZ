@@ -7,6 +7,12 @@
  * @help SKM_calfulmenu.js
  *
  * ■ 更新履歴
+ * v1.0.1 (2025/02/16)
+ * - 選択時の演出を3パターンに分離（アニメーション/発光のみ/なし）
+ * - 発光パターンの追加（フロー、リップル）
+ * - 枠線機能の追加
+ * - コードの最適化
+ *
  * v1.0.0 (2025/02/15)
  * - 初版リリース
  * - 基本機能の実装
@@ -22,21 +28,30 @@
  *    - グラデーション（オーシャン、サンセット、フォレストなど）
  *    - 特殊効果（ネオン、メタル）
  *
- * 2. 選択時のアニメーション（8種類）
- *    - ブリーズ：ふわふわと浮遊
- *    - パルス：光の波動
- *    - バウンス：軽やかに跳ねる
- *    - シェイク：小刻みに振動
- *    - スライド：横方向に揺れる
- *    - スパークル：きらきらと光る
- *    - ジグザグ：ギザギザと動く
- *    - ロータリー：円を描くように回転
+ * 2. 選択時の演出パターン
+ *    プラグインパラメータで演出パターンを切り替えることができます。
+ *    - アニメーションパターン（6種類）
+ *      - ブリーズ：ふわふわと浮遊
+ *      - バウンス：軽やかに跳ねる
+ *      - シェイク：小刻みに振動
+ *      - スライド：横方向に揺れる
+ *      - ジグザグ：ギザギザと動く
+ *      - ロータリー：回転
+ *    - 発光パターン（4種類）
+ *      - パルス：光の波動
+ *      - スパークル：きらきらと光る
+ *      - フロー：左から右へ流れる発光
+ *      - リップル：波紋のような発光
+ *    - なし：シンプルな表示
  *
- * 3. アニメーション切り替え
- *    プラグインパラメータで、アニメーション効果の
- *    有効/無効を切り替えることができます。
- *    無効時は静的な表示になります。
- *
+ * 3. 枠線カスタマイズ
+ *    - 枠線の有効/無効切り替え
+ *    - 枠線の太さ調整（1-8px）
+ *    - 枠線の色設定
+ *      - プリセット（白、黒、赤、青、黄）
+ *      - カスタムカラー（HTMLカラーコード）
+ * 
+ * 
  * ■ 使い方
  * 1. プラグインパラメータ「メニューカラー設定」で
  *    各コマンドの色をプリセットから選択できます。
@@ -44,7 +59,7 @@
  * 2. アニメーションスタイルを選択することで、
  *    選択時の動きをカスタマイズできます。
  *
- * 3. アニメーション有効/無効を切り替えることで、
+ * 3. 演出パターンを切り替えることで、
  *    パフォーマンスと見た目を調整できます。
  *
  * 4. プラグインで独自のメニューを入れたときには、
@@ -57,6 +72,11 @@
  *    背景色1、背景色2、背景色3、（グラデーションの場合は背景色2,3）文字色を
  *    それぞれ個別に設定できます。
  *
+ * 7. 枠線カスタマイズ
+ *    設定したカラーの周囲に枠線を表示することができます。
+ *
+ * 
+ * 
  * ■ プリセットカラー一覧
  * ・シンプルブルー：青の単色
  * ・シンプルレッド：赤の単色
@@ -88,34 +108,50 @@
  * 不具合や要望がありましたら、GitHubのIssuesにてご報告ください。
  * ツクールフォーラムの公開スレッドでも対応しております。
  *
- * @param EnableAnimation
- * @text アニメーション有効化
- * @type boolean
- * @on 有効
- * @off 無効
- * @desc メニューコマンドのアニメーション効果を有効にするか設定します。
- * @default true
+ * @param SelectionEffect
+ * @text 選択時の演出（スタイル）
+ * @type select
+ * @option アニメーション（動きと光で演出）
+ * @value animation
+ * @option 発光のみ
+ * @value glow
+ * @option なし
+ * @value none
+ * @desc 選択時の演出効果を設定します。
+ * @default animation
  *
- * @param MenuStyle
+ * @param AnimationStyle
  * @text アニメーションスタイル
  * @type select
  * @option ブリーズ（ふわふわ）
  * @value breath
- * @option パルス（光の波動）
- * @value pulse
  * @option バウンス（跳ねる）
  * @value bounce
  * @option シェイク（小刻み振動）
  * @value shake
  * @option スライド（横揺れ）
  * @value slide
- * @option スパークル（きらきら）
- * @value sparkle
  * @option ジグザグ（ギザギザ）
  * @value zigzag
  * @option ロータリー（回転）
  * @value rotary
+
  * @default breath
+ * @parent SelectionEffect
+ *
+ * @param GlowStyle
+ * @text 発光スタイル
+ * @type select
+ * @option パルス（光の波動）
+ * @value pulse
+ * @option スパークル（きらきら）
+ * @value sparkle
+ * @option フロー（左から右）
+ * @value flow
+ * @option リップル（波紋）
+ * @value ripple
+ * @default pulse
+ * @parent SelectionEffect
  *
  * @param CustomColors
  * @text メニューカラー設定
@@ -123,6 +159,48 @@
  * @desc メニューコマンドごとの色設定
  * @default ["{\"commandName\":\"アイテム\",\"colorScheme\":\"neon_blue\"}", "{\"commandName\":\"スキル\",\"colorScheme\":\"neon_pink\"}", "{\"commandName\":\"装備\",\"colorScheme\":\"gold_metal\"}", "{\"commandName\":\"ステータス\",\"colorScheme\":\"forest_gradient\"}", "{\"commandName\":\"並び替え\",\"colorScheme\":\"ocean_gradient\"}", "{\"commandName\":\"オプション\",\"colorScheme\":\"silver_metal\"}", "{\"commandName\":\"セーブ\",\"colorScheme\":\"sunrise\"}", "{\"commandName\":\"ゲーム終了\",\"colorScheme\":\"midnight\"}"]
  *
+ * @param EnableBorder
+ * @text 枠線表示
+ * @type boolean
+ * @on 有効
+ * @off 無効
+ * @desc メニューコマンドの周りに枠線を表示するか設定します。
+ * @default false
+ *
+ * @param BorderWidth
+ * @text 枠線の太さ
+ * @type number
+ * @min 1
+ * @max 8
+ * @desc 枠線の太さをピクセル単位で指定します。
+ * @default 2
+ * @parent EnableBorder
+ * 
+ * @param BorderColor
+ * @text 枠線の色
+ * @type select
+ * @option 白
+ * @value #FFFFFF
+ * @option 黒
+ * @value #000000
+ * @option 赤
+ * @value #FF0000
+ * @option 青
+ * @value #0000FF
+ * @option 黄
+ * @value #FFFF00
+ * @option カスタム
+ * @value custom
+ * @desc 枠線の色を選択します。
+ * @default #FFFFFF
+ * @parent EnableBorder
+ * 
+ * @param CustomBorderColor
+ * @text カスタム枠線色
+ * @type string
+ * @desc 枠線の色をHTMLカラーコードで指定します。BorderColorでカスタムを選択時のみ有効
+ * @default #FFFFFF
+ * @parent BorderColor
  */
 
 /*~struct~MenuColors:
@@ -213,8 +291,10 @@
     let _animationCount = 0;
     let _lastSelectedIndex = -1;
 
-    // アニメーション有効/無効の設定を取得
-    const enableAnimation = parameters.EnableAnimation !== "false";
+    // プラグインパラメータの解析
+    const selectionEffect = parameters.SelectionEffect || "animation";
+    const isAnimationEnabled = selectionEffect === "animation";
+    const isGlowEnabled = selectionEffect === "glow";
 
     // プラグインパラメータの解析
     const customColors = JSON.parse(parameters.CustomColors || "[]").map(
@@ -344,27 +424,15 @@
 
         if (customStyle) {
             if (customStyle.colorScheme === "custom") {
-                // カスタム設定の場合、ユーザーが指定した値を使用
                 return {
-                    backgroundColor: customStyle.backgroundColor || "#FF6B6B",
-                    backgroundColor2:
-                        customStyle.backgroundColor2 ||
-                        customStyle.backgroundColor ||
-                        "#FF4757",
-                    backgroundColor3:
-                        customStyle.backgroundColor3 ||
-                        customStyle.backgroundColor2 ||
-                        customStyle.backgroundColor ||
-                        "#FF2743",
-                    textColor: customStyle.textColor || "#FFFFFF",
-                    angle: Number(customStyle.angle || 45),
+                    backgroundColor: customStyle.backgroundColor,
+                    backgroundColor2: customStyle.backgroundColor2,
+                    backgroundColor3: customStyle.backgroundColor3,
+                    textColor: customStyle.textColor,
+                    angle: Number(customStyle.angle || 0),
                 };
-            } else {
-                return (
-                    COLOR_PRESETS[customStyle.colorScheme] ||
-                    COLOR_PRESETS.simple_blue
-                );
             }
+            return COLOR_PRESETS[customStyle.colorScheme] || COLOR_PRESETS.simple_blue;
         }
 
         return COLOR_PRESETS.simple_blue;
@@ -513,6 +581,67 @@
                 return 0.3 + Math.abs(Math.sin(count * 0.2)) * 0.15;
             },
         },
+        // 左から右へ流れる発光
+        flow: {
+            getScale(count) {
+                return 1;
+            },
+            getOffset(count) {
+                return { x: 0, y: 0 };
+            },
+            getGlowIntensity(count) {
+                return 15;
+            },
+            getBrightness(count) {
+                return 0.2;
+            },
+            getGlowGradient(ctx, rect, count) {
+                const gradient = ctx.createLinearGradient(
+                    rect.x - rect.width,
+                    rect.y,
+                    rect.x + rect.width * 2,
+                    rect.y
+                );
+                
+                const position = (count % 100) / 100;
+                gradient.addColorStop(Math.max(0, position - 0.3), "rgba(0, 0, 0, 0.2)");
+                gradient.addColorStop(position, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(Math.min(1, position + 0.3), "rgba(0, 0, 0, 0.2)");
+                
+                return gradient;
+            }
+        },
+        // 波紋のような発光
+        ripple: {
+            getScale(count) {
+                return 1;
+            },
+            getOffset(count) {
+                return { x: 0, y: 0 };
+            },
+            getGlowIntensity(count) {
+                return 12 + Math.sin(count * 0.1) * 4;
+            },
+            getBrightness(count) {
+                return 0.2;
+            },
+            getGlowGradient(ctx, rect, count) {
+                const gradient = ctx.createRadialGradient(
+                    rect.x + rect.width / 2,
+                    rect.y + rect.height / 2,
+                    0,
+                    rect.x + rect.width / 2,
+                    rect.y + rect.height / 2,
+                    rect.width
+                );
+                
+                const phase = (count % 60) / 60;
+                gradient.addColorStop(phase, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(Math.min(1, phase + 0.2), "rgba(0, 0, 0, 0.2)");
+                
+                return gradient;
+            }
+        }
     };
 
     // 背景を消す
@@ -531,7 +660,7 @@
         this._cursorSprite.alpha = 0;
     };
 
-    // アップデート処理
+    // アップデート処理を修正
     const _Window_MenuCommand_update = Window_MenuCommand.prototype.update;
     Window_MenuCommand.prototype.update = function () {
         _Window_MenuCommand_update.call(this);
@@ -539,11 +668,11 @@
         // 選択位置の変更を検知
         if (this.index() !== _lastSelectedIndex) {
             _lastSelectedIndex = this.index();
-            this.refresh(); // 選択位置が変わったら必ずリフレッシュ
+            this.refresh();
         }
 
-        // アニメーション時のみ追加の更新
-        if (enableAnimation) {
+        // アニメーションまたは発光エフェクト時のみ更新
+        if (isAnimationEnabled || isGlowEnabled) {
             _animationCount++;
             if (_animationCount % 2 === 0) {
                 this.refresh();
@@ -560,11 +689,45 @@
 
     // 描画処理
     Window_MenuCommand.prototype.drawItem = function (index) {
-        if (enableAnimation) {
+        if (isAnimationEnabled) {
             this.drawAnimatedItem(index);
+        } else if (isGlowEnabled) {
+            this.drawGlowItem(index);
         } else {
             this.drawStaticItem(index);
         }
+    };
+
+    // グラデーション作成のヘルパー関数を追加
+    Window_MenuCommand.prototype.createCommandGradient = function (ctx, rect, style) {
+        const angle = Number(style.angle || 0);
+        const centerX = rect.x + rect.width / 2;
+        const centerY = rect.y + rect.height / 2;
+        const distance = Math.max(rect.width, rect.height);
+
+        const radians = (angle * Math.PI) / 180;
+        const gradientStartX = centerX - (Math.cos(radians) * distance) / 2;
+        const gradientStartY = centerY - (Math.sin(radians) * distance) / 2;
+        const gradientEndX = centerX + (Math.cos(radians) * distance) / 2;
+        const gradientEndY = centerY + (Math.sin(radians) * distance) / 2;
+
+        const gradient = ctx.createLinearGradient(
+            gradientStartX,
+            gradientStartY,
+            gradientEndX,
+            gradientEndY
+        );
+
+        gradient.addColorStop(0, style.backgroundColor);
+        gradient.addColorStop(0.5, style.backgroundColor2 || style.backgroundColor);
+        gradient.addColorStop(
+            1,
+            style.backgroundColor3 ||
+                style.backgroundColor2 ||
+                style.backgroundColor
+        );
+
+        return gradient;
     };
 
     // アニメーション無効時の描画処理
@@ -591,39 +754,7 @@
         this.drawRoundedRect(ctx, itemRect, radius);
 
         // グラデーションの設定
-        const gradient = ctx.createLinearGradient(
-            itemRect.x,
-            itemRect.y,
-            itemRect.x + itemRect.width,
-            itemRect.y
-        );
-
-        // 選択時は色をより明るく（値を大きくする）
-        const baseColor = isSelected
-            ? this.adjustColor(commandStyle.backgroundColor, 50) // 30から50に変更
-            : commandStyle.backgroundColor;
-        const color2 = isSelected
-            ? this.adjustColor(
-                  commandStyle.backgroundColor2 || commandStyle.backgroundColor,
-                  50
-              )
-            : commandStyle.backgroundColor2 || commandStyle.backgroundColor;
-        const color3 = isSelected
-            ? this.adjustColor(
-                  commandStyle.backgroundColor3 ||
-                      commandStyle.backgroundColor2 ||
-                      commandStyle.backgroundColor,
-                  50
-              )
-            : commandStyle.backgroundColor3 ||
-              commandStyle.backgroundColor2 ||
-              commandStyle.backgroundColor;
-
-        gradient.addColorStop(0, baseColor);
-        gradient.addColorStop(0.5, color2);
-        gradient.addColorStop(1, color3);
-
-        // 基本の描画
+        const gradient = this.createCommandGradient(ctx, itemRect, commandStyle);
         ctx.fillStyle = gradient;
         ctx.fill();
 
@@ -636,6 +767,13 @@
             // 選択時の光彩効果を追加
             ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
             ctx.shadowBlur = 10;
+            ctx.stroke();
+        }
+
+        if (enableBorder) {
+            // 通常の描画の後に枠線を追加
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = borderWidth;
             ctx.stroke();
         }
 
@@ -652,13 +790,13 @@
         );
     };
 
-    // アニメーション有効時の描画処理（既存のdrawItem関数の内容）
+    // アニメーション有効時の描画処理
     Window_MenuCommand.prototype.drawAnimatedItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
         const isSelected = this.index() === index;
 
-        const style = animationStyles[parameters.MenuStyle || "breath"];
+        const style = animationStyles[parameters.AnimationStyle || "breath"];
         const animationScale = isSelected ? style.getScale(_animationCount) : 1;
         const offset = isSelected
             ? style.getOffset(_animationCount, rect)
@@ -698,40 +836,8 @@
         // 角丸の描画
         this.drawRoundedRect(ctx, itemRect, radius);
 
-        // グラデーションの計算
-        const angle = Number(commandStyle.angle || 0);
-        const centerX = itemRect.x + itemRect.width / 2;
-        const centerY = itemRect.y + itemRect.height / 2;
-        const distance = Math.max(itemRect.width, itemRect.height);
-
-        const radians = (angle * Math.PI) / 180;
-        const gradientStartX = centerX - (Math.cos(radians) * distance) / 2;
-        const gradientStartY = centerY - (Math.sin(radians) * distance) / 2;
-        const gradientEndX = centerX + (Math.cos(radians) * distance) / 2;
-        const gradientEndY = centerY + (Math.sin(radians) * distance) / 2;
-
-        const gradient = ctx.createLinearGradient(
-            gradientStartX,
-            gradientStartY,
-            gradientEndX,
-            gradientEndY
-        );
-
-        // 3段階グラデーションの設定
-        gradient.addColorStop(0, commandStyle.backgroundColor);
-        gradient.addColorStop(
-            0.5,
-            commandStyle.backgroundColor2 || commandStyle.backgroundColor
-        );
-        gradient.addColorStop(
-            1,
-            commandStyle.backgroundColor3 ||
-                commandStyle.backgroundColor2 ||
-                commandStyle.backgroundColor
-        );
-
-        // 通常の描画
-        ctx.globalCompositeOperation = "source-over";
+        // グラデーションの設定
+        const gradient = this.createCommandGradient(ctx, itemRect, commandStyle);
         ctx.fillStyle = gradient;
         ctx.fill();
 
@@ -769,6 +875,13 @@
             ctx.fill();
         }
 
+        if (enableBorder) {
+            // 通常の描画の後に枠線を追加
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = borderWidth;
+            ctx.stroke();
+        }
+
         ctx.restore();
 
         // テキストの描画
@@ -792,6 +905,82 @@
                 "center"
             );
         }
+    };
+
+    // 発光エフェクト時の描画処理を追加
+    Window_MenuCommand.prototype.drawGlowItem = function (index) {
+        const rect = this.itemLineRect(index);
+        const commandName = this.commandName(index);
+        const isSelected = this.index() === index;
+        const commandStyle = getCommandStyle(commandName);
+
+        const style = animationStyles[parameters.GlowStyle || "pulse"];
+        const glowIntensity = isSelected ? style.getGlowIntensity(_animationCount) : 0;
+        const brightness = isSelected ? style.getBrightness(_animationCount) : 0;
+
+        const itemRect = {
+            x: rect.x + 2,
+            y: rect.y + 2,
+            width: rect.width - 4,
+            height: rect.height - 4,
+        };
+
+        const ctx = this.contents.context;
+        const radius = 8;
+
+        ctx.save();
+        ctx.beginPath();
+
+        // 角丸の描画
+        this.drawRoundedRect(ctx, itemRect, radius);
+
+        // グラデーションの設定
+        const gradient = this.createCommandGradient(ctx, itemRect, commandStyle);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        if (isSelected) {
+            // 発光エフェクト
+            ctx.globalCompositeOperation = "overlay";
+            ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+            ctx.fill();
+
+            // 光彩効果
+            ctx.globalCompositeOperation = "source-over";
+            ctx.shadowColor = commandStyle.backgroundColor;
+            ctx.shadowBlur = glowIntensity;
+            ctx.fill();
+
+            // 縁取り効果
+            ctx.strokeStyle = `rgba(255, 255, 255, 0.8)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (style.getGlowGradient) {
+                // カスタム発光エフェクト
+                ctx.globalCompositeOperation = "overlay";
+                ctx.fillStyle = style.getGlowGradient(ctx, itemRect, _animationCount);
+                ctx.fill();
+            }
+        }
+
+        if (enableBorder) {
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = borderWidth;
+            ctx.stroke();
+        }
+
+        ctx.restore();
+
+        // テキストの描画
+        this.changeTextColor(isSelected ? "#FFFFFF" : commandStyle.textColor);
+        this.drawText(
+            commandName,
+            itemRect.x + 4,
+            itemRect.y,
+            itemRect.width - 8,
+            "center"
+        );
     };
 
     // 角丸長方形を描画するヘルパー関数
@@ -840,4 +1029,11 @@
             "#" + (0x1000000 + (r << 16) + (g << 8) + b).toString(16).slice(1)
         );
     };
+
+    // プラグインパラメータの解析に追加
+    const enableBorder = parameters.EnableBorder === "true";
+    const borderWidth = Number(parameters.BorderWidth || 2);
+    const borderColor = parameters.BorderColor === "custom" 
+        ? parameters.CustomBorderColor 
+        : parameters.BorderColor;
 })();
