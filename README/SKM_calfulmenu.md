@@ -3,8 +3,8 @@
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulmenu.js)
 
 <!-- ここに画像を入れる予定 -->
-<img src="../images/SKM_calfulmenu1.png" width="400">
-<img src="../images/SKM_calfulmenu2.png" width="400">
+<img src="../images/SKM_calfulmenu1.png" width="400"><img src="../images/SKM_calfulmenu2.png" width="400">
+<img src="../images/SKM_calfulmenu3.png" width="400">
 
 ## 更新履歴
 
@@ -68,7 +68,6 @@
 2. プラグインパラメータでカスタマイズ
    - 各コマンドの色をプリセットから選択
    - アニメーションスタイルを設定
-   - アニメーション有効/無効を設定
    - 枠線の設定（オプション）
 
 ## プリセットカラー一覧
