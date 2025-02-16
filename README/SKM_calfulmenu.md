@@ -6,6 +6,8 @@
 <img src="../images/SKM_calfulmenu1.png" width="400"><img src="../images/SKM_calfulmenu2.png" width="400">
 <img src="../images/SKM_calfulmenu3.png" width="400">
 
+https://github.com/user-attachments/assets/07c69d82-4e12-4b07-abc6-34c70519247c
+
 ## 更新履歴
 
 - v1.0.1 (2025/02/16)
