@@ -4,6 +4,7 @@
 
 <!-- ここに画像を入れる予定 -->
 <img src="../images/SKM_calfulmenu1.png" width="400"><img src="../images/SKM_calfulmenu2.png" width="400">
+<img src="../images/SKM_calfulmenu3.png" width="400">
 
 ## 更新履歴
 
