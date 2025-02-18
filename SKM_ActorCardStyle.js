@@ -704,105 +704,20 @@
         }
     };
 
-/*
-//マルコピしてindexを送る
-    Window_MenuStatus.prototype.drawItemImage = function(index) {
-        console.log(index)
-        const actor = this.actor(index);
-        const rect = this.itemRect(index);
-        let bitmap = null;
-        const data = this.getActorImgData(actor);
-        console.log(data.GraphicMode === 'face')
-        if (data && data.GraphicMode !== 'none') {
-            if (data.GraphicMode === 'imgApng') {
-                this.createApngSprite(actor, index, data, rect);
-            } else if (this.isActorPictureEXApp()) {
-                bitmap = data.GraphicMode === 'face' ? actor.loadActorFace() : actor.loadActorGraphic();
-            } else {
-                bitmap = data.GraphicMode === 'face' ? ImageManager.loadFace(data.FaceImg) : ImageManager.nuun_LoadPictures(data.ActorImg);
-            }
-        }
-
-        if (bitmap) {
-            bitmap.addLoadListener(function() {
-                this.drawActorGraphic(index,data, bitmap, rect.x, rect.y, rect.width, rect.height, actor);
-            }.bind(this));
-        } else {
-            this.drawActorFront(index,data, rect.x, rect.y, rect.width, rect.height);
-        }
-        
+    const _Window_MenuStatus_drawActorGraphic = Window_MenuStatus.prototype.drawActorGraphic;
+    Window_MenuStatus.prototype.drawActorGraphic = function(data, bitmap, x, y, width, height, actor) {
+        _Window_MenuStatus_drawActorGraphic.call(this, data, bitmap, x, y, width, height, actor);
+        this.drawActorFrontA(actor.actorId(), data, x, y, width, height);
     };
 
-    Window_MenuStatus.prototype.drawActorGraphic = function(index,data, bitmap, x, y, width, height, actor) {
-        this.changePaintOpacity(this.isSubMemberOpacity(actor));
-        if (data.GraphicMode === 'face') {
-            this.nuunMenu_contentsDrawActorFace(actor, data, x, y, width, height);
-        } else {
-            this.nuunMenu_contentsDrawActorGraphic(actor, data, bitmap, x, y, width, height);
-        }
-        this.changePaintOpacity(true);
-        this.drawActorFront(index,data, x, y, width, height);
-    };
-
-*/
-
-
-    const _Window_MenuStatus_drawActorFront = Window_MenuStatus.prototype.drawActorFront;
-    Window_MenuStatus.prototype.drawActorFront = function(index, data, x, y, width, height) {
-        // 元の処理を実行
-        _Window_MenuStatus_drawActorFront.call(this, data, x, y, width, height);
-        
+    Window_MenuStatus.prototype.drawActorFrontA = function(index, data, x, y, width, height) {
         // アクターの設定を取得
-        const actor = this.actor(index);
+        const actor = $gameActors.actor(index);
         if (!actor) return;
         
         const settings = getActorSettings(actor);
-
         if (!settings) return;
-        console.log(settings.showCardBorder)
 
-        /*
-        // 枠線の描画
-        if (settings.showCardBorder === 'true') {
-            const context = this.contents.context;
-            context.save();
-            
-            // カード枠の設定
-            const borderWidth = Number(settings.cardBorderWidth);
-            let borderColor;
-            
-            if (settings.cardBorderColor === 'custom') {
-                const customColor = customColors.get(settings.CardBorderCustomColorName);
-                if (customColor) {
-                    borderColor = `rgba(${customColor.red}, ${customColor.green}, ${customColor.blue}, 1.0)`;
-                }
-            } else {
-                const rgb = COLOR_VALUES[settings.cardBorderColor] || COLOR_VALUES.white;
-                borderColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1.0)`;
-            }
-            
-            context.strokeStyle = borderColor;
-            context.lineWidth = borderWidth;
-            
-            context.strokeRect(
-                x + borderWidth/2,
-                y + borderWidth/2,
-                width - borderWidth,
-                height - borderWidth
-            );
-            
-            context.restore();
-        }
-
-        // フィルターの描画
-        if (settings.useColorFilter === 'true' && settings.FilterCustomColorName) {
-            const filterColor = getFilterColor(settings.FilterCustomColorName);
-            if (filterColor) {
-                this.contents.fillRect(x, y, width, height, filterColor);
-            }
-        }
-
-        */
         // カード枠の描画
         if (settings && settings.showCardBorder) {
             const context = this.contents.context;
