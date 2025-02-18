@@ -598,10 +598,10 @@
         }
 
         // フィルターの描画(フロントで描くからいらない)
-/*        if (settings && settings.useColorFilter && settings.filterColor) {
+        if (settings && settings.useColorFilter && settings.filterColor) {
             this.contents.fillRect(x, y, width, height, settings.filterColor);
         }
-*/
+
         
         this.contents.paintOpacity = originalOpacity;
     };
@@ -704,7 +704,7 @@
         }
     };
 
-
+/*
 //マルコピしてindexを送る
     Window_MenuStatus.prototype.drawItemImage = function(index) {
         console.log(index)
@@ -744,7 +744,7 @@
         this.drawActorFront(index,data, x, y, width, height);
     };
 
-
+*/
 
 
     const _Window_MenuStatus_drawActorFront = Window_MenuStatus.prototype.drawActorFront;
