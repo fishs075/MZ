@@ -7,7 +7,7 @@
 <img src="../images/SKM_ActorCardStyle1.png" width="400"><img src="../images/SKM_ActorCardStyle2.png" width="400">
 
 
-
+告知　02/18 15:00　以前にDLされた方。すみませんバグありで動きません。再DLよろしければお願いします
 
 ## 概要
  - アクターのメニュー表示をカスタマイズするプラグインです。
