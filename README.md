@@ -12,7 +12,7 @@
 
 -   [ポップアップ表示プラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_GetInformation.md)
 
--   [アクターカードスタイルプラグイン]()
+-   [アクターカードスタイルプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md)
 
 ## 利用規約
 
