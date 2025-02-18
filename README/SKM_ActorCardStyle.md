@@ -1,4 +1,4 @@
-# ポップアップ表示プラグイン
+# アクターカードスタイルプラグイン
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle.js)
 
