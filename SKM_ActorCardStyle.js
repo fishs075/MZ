@@ -2,7 +2,7 @@
  * @target MZ
  * @plugindesc アクターカードスタイル
  * @author さかなのまえあし
- * @version 1.1.0
+ * @version 1.0.1
  * @url https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle.js
  *  
  * @help
@@ -67,7 +67,7 @@
  * - フィルターは最大濃さでも透けてかかる
  * 
  * ■ 更新履歴
- * 1.1.0 - 2024/02/XX
+ * 1.0.1 - 2024/02/18
  * - カード枠機能を追加
  * - フィルター機能を追加
  * - 選択エフェクトを改善
