@@ -1,9 +1,10 @@
 /*:
  * @target MZ
  * @plugindesc アクターカードスタイル
- * @author Your Name
+ * @author さかなのまえあし
  * @version 1.1.0
- * 
+ * @url https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle.js
+ *  
  * @help
  * アクターのメニュー表示をカスタマイズするプラグインです。
  * 背景色とパターンを組み合わせて、キャラクターごとに個性的な
