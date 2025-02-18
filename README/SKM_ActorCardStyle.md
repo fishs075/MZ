@@ -5,7 +5,7 @@
 <!-- ここに画像を入れる予定 -->
 
 <img src="../images/SKM_ActorCardStyle1.png" width="400"><img src="../images/SKM_ActorCardStyle2.png" width="400">
-<img src="../images/SKM_ActorCardStyle3.png" width="400">
+
 
 
 
