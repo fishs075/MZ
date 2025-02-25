@@ -6,7 +6,7 @@
 
 <img src="../images/SKM_ActorCardStyle1.png" width="400"><img src="../images/SKM_ActorCardStyle2.png" width="400">
 
-告知　 02/18 15:00 　以前に DL された方。すみませんバグありで動きません。再 DL よろしければお願いします
+
 
 ## 概要
 
