@@ -2,7 +2,7 @@
  * @target MZ
  * @plugindesc アクターカードスタイル
  * @author さかなのまえあし
- * @version 1.0.2
+ * @version 1.0.3
  * @url https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle.js
  *
  * @help
@@ -42,6 +42,7 @@
  * 4. フィルター機能
  *    - カスタムカラーによるフィルター効果
  *    - 背景全体に色調を追加
+ *    - 枠線にフィルターを適用するかどうかを選択可能
  *
  * 5. 控えメンバー表示
  *    - 控えメンバーの背景を暗く表示
@@ -73,17 +74,22 @@
  * - 控えメンバーの暗さは0.0（完全に暗く）～1.0（通常の明るさ）で設定
  *
  * ■ 更新履歴
- * 1.0.2 - 2024/02/23
+ * 1.0.3 - 2025/02/25
+ * - フィルターを枠線に適用するかどうかを選択できるオプションを追加
+ * - アクターIDの取得方法を改善
+ * - 控えメンバーの判定処理を修正
+ *
+ * 1.0.2 - 2025/02/23
  * - 控えメンバーの背景を暗く表示する機能を追加
  * - 控えメンバーの暗さをパラメータで設定可能に
  *
- * 1.0.1 - 2024/02/18
+ * 1.0.1 - 2025/02/18
  * - カード枠機能を追加
  * - フィルター機能を追加
  * - 選択エフェクトを改善
  * - パターンの追加と改善
  *
- * 1.0.0 - 2024/02/17
+ * 1.0.0 - 2025/02/17
  * - 初回リリース
  *
  * @param DefaultBackgroundColor
@@ -298,6 +304,13 @@
  * @default 8
  * @parent ShowCardBorder
  *
+ * @param ApplyFilterToBorder
+ * @text 枠線にフィルターを適用
+ * @desc カード枠にもフィルター効果を適用するかどうか
+ * @type boolean
+ * @default false
+ * @parent ShowCardBorder
+ *
  * @param UseColorFilter
  * @text フィルターを使用
  * @desc アクターカードにカラーフィルターを適用するかどうか
@@ -381,6 +394,7 @@
     const reserveMemberDarkness = Number(
         parameters["ReserveMemberDarkness"] || 0.4
     );
+    const applyFilterToBorder = parameters["ApplyFilterToBorder"] === "true";
 
     // アクターカラー設定を解析
     const actorColors = new Map();
@@ -534,6 +548,10 @@
                 settings.FilterCustomColorName
                     ? getFilterColor(settings.FilterCustomColorName)
                     : null,
+            applyFilterToBorder:
+                settings && settings.ApplyFilterToBorder === "true"
+                    ? true
+                    : applyFilterToBorder,
         };
     }
 
@@ -687,16 +705,41 @@
             context.restore();
         }
 
+        // 不参加メンバーの場合は暗く
+        const isReserve = actor
+            ? $gameParty.battleMembers().indexOf(actor) === -1
+            : false;
+        const darkenRate = isReserve ? reserveMemberDarkness : 1.0;
+
+        // フィルターの描画（枠線の下に描画する場合）
+        if (
+            settings &&
+            settings.useColorFilter &&
+            settings.filterColor &&
+            !settings.applyFilterToBorder
+        ) {
+            const filterColor = settings.filterColor;
+            const rgba = filterColor.match(/[\d.]+/g);
+            if (rgba && rgba.length >= 4) {
+                // フィルターの色も暗くする
+                this.contents.fillRect(
+                    x,
+                    y,
+                    width,
+                    height,
+                    `rgba(${Math.floor(rgba[0] * darkenRate)}, ${Math.floor(
+                        rgba[1] * darkenRate
+                    )}, ${Math.floor(rgba[2] * darkenRate)}, ${rgba[3]})`
+                );
+            } else {
+                this.contents.fillRect(x, y, width, height, filterColor);
+            }
+        }
+
         // カード枠の描画
         if (settings && settings.showCardBorder) {
             const context = this.contents.context;
             context.save();
-
-            // 不参加メンバーの場合は枠線も暗く
-            const isReserve = actor
-                ? $gameParty.battleMembers().indexOf(actor) === -1
-                : false;
-            const darkenRate = isReserve ? reserveMemberDarkness : 1.0;
 
             // カード枠の設定
             const borderColor = settings.cardBorderColor;
@@ -724,17 +767,17 @@
             context.restore();
         }
 
-        // フィルターの描画
-        if (settings && settings.useColorFilter && settings.filterColor) {
+        // フィルターの描画（枠線の上に描画する場合）
+        if (
+            settings &&
+            settings.useColorFilter &&
+            settings.filterColor &&
+            settings.applyFilterToBorder
+        ) {
             const filterColor = settings.filterColor;
             const rgba = filterColor.match(/[\d.]+/g);
             if (rgba && rgba.length >= 4) {
                 // フィルターの色も暗くする
-                const isReserve = actor
-                    ? $gameParty.battleMembers().indexOf(actor) === -1
-                    : false;
-                const darkenRate = isReserve ? reserveMemberDarkness : 1.0;
-
                 this.contents.fillRect(
                     x,
                     y,
@@ -942,26 +985,59 @@
     };
 
     Window_MenuStatus.prototype.drawActorFrontA = function (
-        actor,
+        actorId, // 数値のアクターID
         data,
         x,
         y,
         width,
         height
     ) {
-        if (!actor) return;
+        if (!actorId) return;
 
-        const settings = getActorSettings(actor);
+        const settings = getActorSettings(actorId);
         if (!settings) return;
+
+        // アクターオブジェクトを取得
+        const actor = $gameActors.actor(actorId);
+        if (!actor) return;
 
         // 不参加メンバーの場合は枠線も暗く
         const isReserve = $gameParty.battleMembers().indexOf(actor) === -1;
         const darkenRate = isReserve ? reserveMemberDarkness : 1.0;
 
+        // フィルターの描画（枠線の下に描画する場合）
+        if (
+            settings &&
+            settings.useColorFilter && // 文字列比較ではなくブール値として評価
+            settings.filterColor &&
+            !settings.applyFilterToBorder
+        ) {
+            const filterColor = settings.filterColor;
+            const rgba = filterColor.match(/[\d.]+/g);
+            if (rgba && rgba.length >= 4) {
+                // フィルターの色も暗くする
+                this.contents.fillRect(
+                    x,
+                    y,
+                    width,
+                    height,
+                    `rgba(${Math.floor(rgba[0] * darkenRate)}, ${Math.floor(
+                        rgba[1] * darkenRate
+                    )}, ${Math.floor(rgba[2] * darkenRate)}, ${rgba[3]})`
+                );
+            } else {
+                this.contents.fillRect(x, y, width, height, filterColor);
+            }
+        }
+
         // カード枠の描画
-        if (settings && settings.ShowCardBorder === "true") {
+        if (settings && settings.showCardBorder) {
+            // 文字列比較ではなくブール値として評価
             const context = this.contents.context;
             context.save();
+
+            // デバッグ用のログを削除
+            // console.log("チェック");
 
             // カード枠の設定
             const borderColor = settings.cardBorderColor;
@@ -976,7 +1052,7 @@
             } else {
                 context.strokeStyle = borderColor;
             }
-            context.lineWidth = settings.CardBorderWidth;
+            context.lineWidth = settings.cardBorderWidth;
 
             // 枠線を描画
             context.strokeRect(
@@ -989,11 +1065,12 @@
             context.restore();
         }
 
-        // フィルターの描画
+        // フィルターの描画（枠線の上に描画する場合）
         if (
             settings &&
-            settings.UseColorFilter === "true" &&
-            settings.filterColor
+            settings.useColorFilter && // 文字列比較ではなくブール値として評価
+            settings.filterColor &&
+            settings.applyFilterToBorder
         ) {
             const filterColor = settings.filterColor;
             const rgba = filterColor.match(/[\d.]+/g);
