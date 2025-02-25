@@ -1,12 +1,11 @@
 //
-//  ポップアップ表示プラグイン ver1.0.0
+//  ポップアップ表示プラグイン ver1.0.1
 //
 // ------------------------------------------------------
 // Copyright (c) 2016 Yana
 // Released under the MIT license
 // http://opensource.org/licenses/mit-license.php
 // ------------------------------------------------------
-
 
 /*:ja
  * @target MZ
@@ -94,7 +93,7 @@
  * @type number
  * @default 10
  *
- * @param 退場時移動有効
+ * @param 退場時移動有効（未実装）
  * @desc 退場時の移動を行うかの設定です。
  * @type boolean
  * @default false
@@ -108,14 +107,7 @@
  * @value Top
  * @default Bottom
  *
- * @param スライド方向
- * @desc インフォメーションのスライド方向です。
- * @type select
- * @option 上から下
- * @value Down
- * @option 下から上
- * @value Up
- * @default Up
+
 
  *
  * @param X位置補正
@@ -341,9 +333,12 @@
  * <NameColor:色番号>でアイテムの名前の色を変更することができます。
  * 
  * 
- * 
- * 
- * 
+ * ■プラグインコマンド
+ *  - テキストのポップアップ
+ *    プラグインコマンドからテキストのポップアップ通知が行えます。
+ *    通常とは逆の位置に表示させることもできますがその場合同時に表示させるとめちゃくちゃになります。
+ *    サイズは12-36程を想定しています。ログを使う場合より大きい文字を使いたい場合は行数を増やしてください。
+ *    制御文字は\I[]と\C[]はテストしてあります。\FSは表示が狂うので使用しないでください。
  * 
  * 
  * それぞれのテキストの最初に追加することで、ポップアップ発生時にSEを追加する専用制御文字を用意。
@@ -374,27 +369,65 @@
 
  * 
  * 更新履歴
+ * ver1.0.1 (2025/02/25) テキストのポップアップ通知が行えるようになりました。
  * ver1.0.0 (2025/02/15) 移植してあったものを統合、リファクタリング。
- * 
- * 
- * 
- * 
- * 
- * 
 
-
-
- * 
- * 
  * 
  * 
 
  * 
  * 
  * 
+ * @command ShowPopupText
+ * @text テキストポップアップ
+ * @desc 指定したテキストをポップアップ表示します
  * 
+ * @arg text
+ * @type string
+ * @text 表示テキスト
+ * @desc 表示するテキスト内容（制御文字使用可能）
+ * @default 
+ * 
+ * 
+ * @arg fontSize
+ * @type number
+ * @text フォントサイズ
+ * @desc フォントサイズを指定します。
+ * @default 0
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * @arg position
+ * @type select
+ * @text 表示位置
+ * @desc ポップアップの表示位置
+ * @default Top
+ * @option 上部
+ * @value Top
+ * @option 下部
+ * @value Bottom
+ * 
+ * @arg pattern
+ * @type select
+ * @text 表示パターン
+ * @desc ポップアップの表示パターン
+ * @default GrowUp
+ * @option にょき
+ * @value GrowUp
+ * @option 普通
+ * @value Normal
+ * @option うにょーん
+ * @value Stretch
+ * 
+
  */
-
+/*
+var Imported = Imported || {};
+Imported["CommonPopupCore"] = 1.06;
+*/
 function Sprite_Popup() {
     this.initialize.apply(this, arguments);
 }
@@ -477,17 +510,23 @@ window.CommonPopupManager = {
                 return;
             }
 
-            const { text: processedText, se } = this.processTextReplacements(text1, object, value, actor, c);
+            const { text: processedText, se } = this.processTextReplacements(
+                text1,
+                object,
+                value,
+                actor,
+                c
+            );
             text1 = processedText;
 
-            const { bitmap, texts, oneHeight, height } = this.createInfoBitmap(text1);
-
+            const { bitmap, texts, oneHeight, height } =
+                this.createInfoBitmap(text1);
+            const sh = 0;
             this.window().contents = bitmap;
             this.window().drawTextEx("\\FS[" + infoFontSize + "]", 0, 0);
-            this.drawPopupTexts(texts, oneHeight);
+            this.drawPopupTexts(texts, oneHeight, sh, type);
 
             this.displayPopup(bitmap, se, height, texts);
-
         } catch (error) {
             console.error("CommonPopupManager.showInfo エラー:", error);
         }
@@ -709,7 +748,7 @@ window.CommonPopupManager = {
         MV形式報酬表示: InfoMVstyle,
         戦利品表示: useRewardsInfo,
         表示位置: infoPosition,
-        スライド方向: infoSlideAction,
+
         X位置補正: infoSupX,
         Y位置補正: infoSupY,
         表示パターン: infoPattern,
@@ -731,7 +770,7 @@ window.CommonPopupManager = {
         MV形式報酬表示: getParam("MV形式報酬表示", false),
         戦利品表示: getParam("戦利品表示", true),
         表示位置: getParam("表示位置", ""),
-        スライド方向: getParam("スライド方向", ""),
+
         X位置補正: getParam("X位置補正", 0),
         Y位置補正: getParam("Y位置補正", 0),
         表示パターン: getParam("表示パターン", "GrowUp"),
@@ -740,6 +779,7 @@ window.CommonPopupManager = {
         隠しアイテムA表示: getParam("隠しアイテムA表示", false),
         隠しアイテムB表示: getParam("隠しアイテムB表示", false),
     };
+    // スライド方向は位置に応じて自動決定
 
     // ログ関連のパラメータ設定
     const logParams = {
@@ -752,6 +792,9 @@ window.CommonPopupManager = {
 
     // 固定値
     const infoSlideCount = 60;
+
+    // スライド方向は位置に応じて自動決定
+    const infoSlideAction = infoPosition === "Top" ? "Down" : "Up";
 
     // バトル表示リスト
     const battleShowList = String(parameters["Battle Show List"] || "").split(
@@ -857,7 +900,7 @@ window.CommonPopupManager = {
         learnSkill: Game_Actor.prototype.learnSkill,
         forgetSkill: Game_Actor.prototype.forgetSkill,
     };
-/*
+
     PluginManager.registerCommand(
         pluginName,
         "CommonPopupAdd",
@@ -894,7 +937,41 @@ window.CommonPopupManager = {
             CommonPopupManager.clearPopup();
         }
     );
-*/
+
+    // プラグインコマンドの登録
+    PluginManager.registerCommand(pluginName, "testPopup", (args) => {
+        const type = args.type;
+        const value = Number(args.value || 1);
+        const object = {
+            name: args.name || "テストアイテム",
+            iconIndex: Number(args.iconIndex || 0),
+            description: args.description || "",
+            value: args.value > 0, // exp等で使用
+        };
+        CommonPopupManager.showInfo(object, value, type);
+    });
+
+    // プラグインコマンドの実装を追加
+    PluginManager.registerCommand(pluginName, "ShowPopupText", function (args) {
+        //        const text = args.text;
+
+        if (args.fontSize < 12) args.fontSize = infoFontSize;
+
+        const fontsize = Number(args.fontSize);
+        this._fontsize = fontsize;
+        const text = `\\FS[${fontsize}]${args.text}`;
+
+        // 位置に応じてスライド方向を自動決定
+        const slideAction = args.position === "Top" ? "Down" : "Up";
+
+        CommonPopupManager.showTextPopup(fontsize, text, {
+            position: args.position,
+            pattern: args.pattern,
+            slideAction: slideAction,
+        });
+
+        //CommonPopupManager.showTextPopup(text, tempSettings);
+    });
 
     Array.prototype.setNullPos = function (object) {
         for (var i = 0; i < this.length; i++) {
@@ -917,7 +994,6 @@ window.CommonPopupManager = {
     };
 
     CommonPopupManager.initTempSprites = function () {
-
         this._tempCommonSprites = new Array(POPUP_CONSTANTS.MAX_SPRITES);
         this._setedPopups = [];
         this._readyPopup = [];
@@ -964,7 +1040,6 @@ window.CommonPopupManager = {
         this._enable = true;
         this.createBitmap();
         if (arg.slideCount) {
-
             CommonPopupManager._setedPopups.push([
                 this._index,
                 this.height,
@@ -1607,8 +1682,6 @@ window.CommonPopupManager = {
         textState.x += ImageManager.iconWidth + 4; // アイコンの実際の幅に基づいて位置を調整
     };
 
-
-
     //ここから MV Joint
 
     function isRect(value) {
@@ -1634,30 +1707,39 @@ window.CommonPopupManager = {
     Game_Actor.prototype.addParam = function (paramId, value) {
         const paramObject = {
             name: TextManager.param(paramId),
-            value: value > 0
+            value: value > 0,
         };
-        
+
         this.executeWithPopupControl(
             () => _Game_Actor.addParam.call(this, paramId, value),
-            "params",  // battleShowListで使用している文字列に合わせる
+            "params", // battleShowListで使用している文字列に合わせる
             value,
             paramObject
         );
     };
 
     // ポップアップ表示制御用のヘルパー関数
-    Game_Actor.prototype.executeWithPopupControl = function(callback, type, value, object) {
+    Game_Actor.prototype.executeWithPopupControl = function (
+        callback,
+        type,
+        value,
+        object
+    ) {
         const tempEnable = CommonPopupManager._popEnable;
-        if (tempEnable && $gameParty.inBattle() && !battleShowList.contains(type)) {
+        if (
+            tempEnable &&
+            $gameParty.inBattle() &&
+            !battleShowList.contains(type)
+        ) {
             CommonPopupManager._popEnable = false;
         }
-        
+
         const result = callback.call(this);
-        
+
         if (tempEnable && CommonPopupManager._popEnable) {
             CommonPopupManager.showInfo(object, value, type, this.actorId());
         }
-        
+
         CommonPopupManager._popEnable = tempEnable;
         return result;
     };
@@ -1666,25 +1748,25 @@ window.CommonPopupManager = {
         const expDiff = exp - this.currentExp();
         const preLevel = this.level;
         const preSkills = this._skills.clone();
-        
+
         const expObject = {
             name: TextManager.exp,
-            value: expDiff > 0
+            value: expDiff > 0,
         };
-        
+
         this.executeWithPopupControl(
             () => _Game_Actor.changeExp.call(this, exp, show),
             "exp",
             expDiff,
             expObject
         );
-        
+
         // レベル変化の処理
         const levelDiff = this.level - preLevel;
         if (levelDiff !== 0) {
             const levelObject = {
                 name: TextManager.level,
-                value: levelDiff > 0
+                value: levelDiff > 0,
             };
             this.executeWithPopupControl(
                 () => {},
@@ -1693,7 +1775,7 @@ window.CommonPopupManager = {
                 levelObject
             );
         }
-        
+
         // 新規習得スキルの処理
         this._skills.forEach((skillId) => {
             if (!preSkills.contains(skillId)) {
@@ -1714,15 +1796,20 @@ window.CommonPopupManager = {
     };
 
     // Game_Party用のポップアップ制御ヘルパー関数
-    Game_Party.prototype.executeWithPopupControl = function(callback, type, object, value) {
+    Game_Party.prototype.executeWithPopupControl = function (
+        callback,
+        type,
+        object,
+        value
+    ) {
         const result = callback.call(this);
-        
+
         if (CommonPopupManager._popEnable) {
             if (!($gameParty.inBattle() && !battleShowList.contains(type))) {
                 CommonPopupManager.showInfo(object, value, type);
             }
         }
-        
+
         return result;
     };
 
@@ -1742,36 +1829,39 @@ window.CommonPopupManager = {
     };
 
     Game_Party.prototype.gainItem = function (item, amount, includeEquip) {
-        if (!item) return _Game_Party.gainItem.call(this, item, amount, includeEquip);
-  
+        if (!item)
+            return _Game_Party.gainItem.call(this, item, amount, includeEquip);
+
         const isHiddenItem = item.itypeId === 3 || item.itypeId === 4;
         const shouldShowHidden =
             (item.itypeId === 3 && showGetHideItemA) ||
             (item.itypeId === 4 && showGetHideItemB);
-  
+
         if (!isHiddenItem || shouldShowHidden) {
             return this.executeWithPopupControl(
-                () => _Game_Party.gainItem.call(this, item, amount, includeEquip),
+                () =>
+                    _Game_Party.gainItem.call(this, item, amount, includeEquip),
                 "item",
                 item,
                 amount
             );
         }
-  
+
         return _Game_Party.gainItem.call(this, item, amount, includeEquip);
     };
- 
-    const _gInfo_GActor_changeClassLevel = Game_Actor.prototype.changeClassLevel;
+
+    const _gInfo_GActor_changeClassLevel =
+        Game_Actor.prototype.changeClassLevel;
     Game_Actor.prototype.changeClassLevel = function (level, show) {
         const upLevel = level - this.currentClassLevel();
         const preSkills = this._skills.clone();
-        
+
         // クラスレベル変更の処理
         const classObject = {
             name: TextManager.classLevel,
-            value: upLevel > 0
+            value: upLevel > 0,
         };
-        
+
         this.executeWithPopupControl(
             () => _gInfo_GActor_changeClassLevel.call(this, level, show),
             "classLevel",
@@ -1779,9 +1869,9 @@ window.CommonPopupManager = {
             classObject,
             this.currentClass().name
         );
-        
+
         // 新規習得スキルの処理
-        this._skills.forEach(skillId => {
+        this._skills.forEach((skillId) => {
             if (!preSkills.contains(skillId)) {
                 this.executeWithPopupControl(
                     () => {},
@@ -1796,21 +1886,28 @@ window.CommonPopupManager = {
     const __BManager_displayRewards = BattleManager.displayRewards;
 
     // BattleManager用のポップアップ制御ヘルパー関数
-    BattleManager.executeWithPopupControl = function(callback, type, object, value, delay = false) {
+    BattleManager.executeWithPopupControl = function (
+        callback,
+        type,
+        object,
+        value,
+        delay = false
+    ) {
         if (!Imported["BattleFormation"]) return callback.call(this);
         if (!CommonPopupManager.popEnable()) return callback.call(this);
-        if ($gameParty.inBattle() && !battleShowList.contains(type)) return callback.call(this);
-        
+        if ($gameParty.inBattle() && !battleShowList.contains(type))
+            return callback.call(this);
+
         if (delay) {
             $gameTemp._popupDelay = rewardPopupDelay;
         }
-        
+
         const result = callback.call(this);
-        
+
         if (delay) {
             $gameTemp._popupDelay = 0;
         }
-        
+
         return result;
     };
 
@@ -1818,7 +1915,7 @@ window.CommonPopupManager = {
         __BManager_displayRewards.call(this);
     };
 
-    CommonPopupManager.generateTypeText = function(type, value, object) {
+    CommonPopupManager.generateTypeText = function (type, value, object) {
         switch (type) {
             case "gold":
                 return value < 0 ? lostGoldText : getGoldText;
@@ -1839,6 +1936,9 @@ window.CommonPopupManager = {
                 return object.value ? ParamUpText : ParamDownText;
             case "skill":
                 return value === 1 ? getInfoSkillText : lostInfoSkillText;
+            case "text":
+                // テキストタイプの場合は、objectのnameをそのまま返す
+                return object.name;
             default:
                 return value;
         }
@@ -1868,29 +1968,34 @@ window.CommonPopupManager = {
                 return;
             }
 
-            const { text: processedText, se } = this.processTextReplacements(text1, object, value, actor, c);
+            const { text: processedText, se } = this.processTextReplacements(
+                text1,
+                object,
+                value,
+                actor,
+                c
+            );
             text1 = processedText;
 
-            const { bitmap, texts, oneHeight, height } = this.createInfoBitmap(text1);
-
+            const { bitmap, texts, oneHeight, height } =
+                this.createInfoBitmap(text1);
+            const sh = 0;
             this.window().contents = bitmap;
             this.window().drawTextEx("\\FS[" + infoFontSize + "]", 0, 0);
-            this.drawPopupTexts(texts, oneHeight);
+            this.drawPopupTexts(texts, oneHeight, sh, type);
 
             this.displayPopup(bitmap, se, height, texts);
-
         } catch (error) {
             console.error("CommonPopupManager.showInfo エラー:", error);
         }
     };
 
-    CommonPopupManager.displayPopup = function(bitmap, se, height, texts) {
+    CommonPopupManager.displayPopup = function (bitmap, se, height, texts) {
         const arg = this.createPopupArguments(bitmap, se, height);
         arg.y += infoSupY;
         this.adjustBattleWindowPosition(arg, height);
 
         CommonPopupManager._lastIndex = this._tempCommonSprites.setNullPos(arg);
-
     };
 
     var _gInfo_BManager_gainRewards = BattleManager.gainRewards;
@@ -2170,7 +2275,7 @@ window.CommonPopupManager = {
     CommonPopupManager.calculatePopupPosition = function (arg, height) {
         // 基本位置の計算
         const position = this.getBasePosition(arg, height);
-        
+
         // 上部表示の場合の調整
         if (infoPosition === "Up") {
             position.y = 0;
@@ -2178,21 +2283,21 @@ window.CommonPopupManager = {
                 position.y = height;
             }
         }
-        
+
         // Y位置の補正
         position.y += infoSupY;
-        
+
         // バトル中の位置調整
         if ($gameParty.inBattle()) {
             this.adjustBattlePosition(position, height, arg.anchorY);
         }
-        
+
         return position;
     };
 
-    CommonPopupManager.getBasePosition = function(arg, height) {
+    CommonPopupManager.getBasePosition = function (arg, height) {
         const position = { x: 0, y: 0 };
-        
+
         switch (infoPattern) {
             case "GrowUp":
                 position.x = 0 + infoSupX;
@@ -2203,7 +2308,7 @@ window.CommonPopupManager = {
                 arg.pattern = POPUP_CONSTANTS.PATTERN.GROW_UP;
                 if (infoSlideAction === "Down") arg.anchorY = 0;
                 break;
-                
+
             case "Stretch":
                 position.x = 0 + infoSupX;
                 position.y = Graphics.height - height;
@@ -2212,7 +2317,7 @@ window.CommonPopupManager = {
                 arg.anchorY = 0;
                 arg.pattern = POPUP_CONSTANTS.PATTERN.STRETCH;
                 break;
-                
+
             default:
                 position.x = Graphics.boxWidth * -1 + infoSupX;
                 position.y = Graphics.height - height;
@@ -2220,28 +2325,40 @@ window.CommonPopupManager = {
                 arg.anchorX = 0;
                 arg.anchorY = 0;
         }
-        
+
         return position;
     };
 
-    CommonPopupManager.adjustBattlePosition = function(position, height, anchorY) {
+    CommonPopupManager.adjustBattlePosition = function (
+        position,
+        height,
+        anchorY
+    ) {
         // メッセージウィンドウとの位置調整
         if (SceneManager._scene._messageWindow?.active) {
             if (SceneManager._scene._messageWindow._positionType === 2) {
                 const messageY = SceneManager._scene._messageWindow.y;
-                position.y = Math.min(position.y, messageY - height + height * anchorY);
+                position.y = Math.min(
+                    position.y,
+                    messageY - height + height * anchorY
+                );
             }
         }
-        
+
         // ステータスウィンドウとの位置調整
-        if (SceneManager._scene._statusWindow?.isOpen() && 
-            (!$gameMessage.isBusy() || InfoMVstyle)) {
+        if (
+            SceneManager._scene._statusWindow?.isOpen() &&
+            (!$gameMessage.isBusy() || InfoMVstyle)
+        ) {
             const statusY = SceneManager._scene._statusWindow.y;
-            position.y = Math.min(position.y, statusY - height + height * anchorY);
+            position.y = Math.min(
+                position.y,
+                statusY - height + height * anchorY
+            );
         }
     };
 
-    CommonPopupManager.generateText = function(type, value, object) {
+    CommonPopupManager.generateText = function (type, value, object) {
         switch (type) {
             case "gold":
                 return value < 0 ? lostGoldText : getGoldText;
@@ -2267,12 +2384,18 @@ window.CommonPopupManager = {
         }
     };
 
-    CommonPopupManager.processTextReplacements = function(text, object, value, actor, c) {
+    CommonPopupManager.processTextReplacements = function (
+        text,
+        object,
+        value,
+        actor,
+        c
+    ) {
         if (!text) return null;
 
         // SEパラメータの抽出
         const { text: processedText, se } = this.extractSEParameters(text);
-        text = processedText;  // 抽出後のテキストを使用
+        text = processedText; // 抽出後のテキストを使用
 
         // アクター関連の置換
         if (actor) {
@@ -2296,18 +2419,22 @@ window.CommonPopupManager = {
 
         // 説明文の置換
         const descs = object.description ? object.description.split(/\n/) : [];
-        text = descs[0] ? text.replace(/_desc1/g, descs[0]) : text.replace(/_desc1/g, "");
-        text = descs[1] ? text.replace(/_desc2/g, descs[1]) : text.replace(/_desc2/g, "");
+        text = descs[0]
+            ? text.replace(/_desc1/g, descs[0])
+            : text.replace(/_desc1/g, "");
+        text = descs[1]
+            ? text.replace(/_desc2/g, descs[1])
+            : text.replace(/_desc2/g, "");
 
         return {
             text: text,
-            se: se
+            se: se,
         };
     };
 
-    CommonPopupManager.extractSEParameters = function(text) {
+    CommonPopupManager.extractSEParameters = function (text) {
         const se = { name: "", volume: 90, pitch: 100, pan: 0 };
-        
+
         return {
             text: text.replace(/^_se\[(.+?)\]/i, (_, params) => {
                 const [name, volume, pitch, pan] = params.split(",");
@@ -2317,24 +2444,32 @@ window.CommonPopupManager = {
                 if (pan) se.pan = parseInt(pan, 10);
                 return "";
             }),
-            se: se
+            se: se,
         };
     };
 
-    CommonPopupManager.createPopupArguments = function(bitmap, se, height) {
+    CommonPopupManager.createPopupArguments = function (bitmap, se, height) {
         const arg = this.setPopup([]);
         arg.bitmap = bitmap;
         arg.se = se;
         arg.enableOutEffect = enableOutMove;
-        
-        this.setupPopupPosition(arg, height);
-        if (infoPosition === "Top") {
+
+        // 一時的な設定があれば使用
+        const position =
+            this._currentObject?._tempSettings?.position || infoPosition;
+        const pattern =
+            this._currentObject?._tempSettings?.pattern || infoPattern;
+        const slideAction =
+            this._currentObject?._tempSettings?.slideAction || infoSlideAction;
+
+        this.setupPopupPosition(arg, height, position, pattern);
+        if (position === "Top") {
             arg.y = 0;
-            if (infoPattern === "GrowUp" && infoSlideAction !== "Down") {
+            if (pattern === "GrowUp" && slideAction !== "Down") {
                 arg.y = height;
             }
         }
-        
+
         // アニメーション関連の設定
         arg.moveY = 0;
         arg.count = infoCount;
@@ -2342,55 +2477,58 @@ window.CommonPopupManager = {
         arg.extend = [infoMoveFade, infoMoveWait];
         arg.slideCount = infoSlideCount;
         arg.delay = this.calculatePopupDelay();
-        arg.slideAction = infoSlideAction;
-        
+        arg.slideAction = slideAction;
+
         return arg;
     };
 
-    CommonPopupManager.calculatePopupDelay = function() {
+    CommonPopupManager.calculatePopupDelay = function () {
         let delay = 0;
-        
+
         if (!this._tempCommonSprites) {
             this._tempCommonSprites = [];
         }
-        
+
         const sprites = this._tempCommonSprites.compact();
         const lastIndex = this._lastIndex;
-        
+
         if (lastIndex !== undefined && lastIndex >= 0 && sprites[lastIndex]) {
-            sprites.sort((a, b) => a.delay > b.delay ? -1 : 1);
+            sprites.sort((a, b) => (a.delay > b.delay ? -1 : 1));
             delay = sprites[0].delay + infoDelay;
         }
-        
+
         if ($gameTemp._popupDelay && delay === 0) {
             delay += $gameTemp._popupDelay;
         }
-        
+
         return delay;
     };
 
-    CommonPopupManager.createInfoBitmap = function(text1) {
+    CommonPopupManager.createInfoBitmap = function (text1) {
         // テキストの分割と前処理
-        const texts = text1.split(/\n|\\n/).filter(line => {
-            const stripped = line.replace(/\\C\[\d+\]/g, "");
-            return stripped !== "";
-        }).compact();
- 
+        const texts = text1
+            .split(/\n|\\n/)
+            .filter((line) => {
+                const stripped = line.replace(/\\C\[\d+\]/g, "");
+                return stripped !== "";
+            })
+            .compact();
+
         // システムログへの追加
         $gameSystem.pushInfoLog(text1);
- 
+
         // ビットマップのサイズ計算
         const oneHeight = infoFontSize + 8;
         const height = oneHeight * texts.length;
         const bitmap = new Bitmap(Graphics.boxWidth, height);
- 
+
         // 背景の描画
         this.drawBackground(bitmap);
- 
+
         return { bitmap, texts, oneHeight, height };
     };
 
-    CommonPopupManager.drawBackground = function(bitmap) {
+    CommonPopupManager.drawBackground = function (bitmap) {
         bitmap.fillRect(0, 0, infoWidth / 2, bitmap.height, "rgba(0,0,0,0.5)");
         bitmap.gradientFillRect(
             infoWidth / 2,
@@ -2402,11 +2540,24 @@ window.CommonPopupManager = {
         );
     };
 
-    CommonPopupManager.drawPopupTexts = function(texts, oneHeight) {
+    CommonPopupManager.drawPopupTexts = function (texts, oneHeight, sh, type) {
+        this._type = type; // 現在のタイプを保存
+
+        //const sh = (oneHeight - this._fontsize) / 2;
+        //console.log(sh);
         texts.forEach((text, index) => {
             const formattedText = `\\FS[${infoFontSize}]${text}`;
-            this.window().drawTextEx(formattedText, 8, index * oneHeight);
+            if (type === "text") {
+                this.window().drawTextEx(
+                    formattedText,
+                    8,
+                    index * oneHeight + sh
+                );
+            } else {
+                this.window().drawTextEx(formattedText, 8, index * oneHeight);
+            }
         });
+        this._type = null; // タイプをリセット
     };
 
     // エラー種別の定義
@@ -2415,21 +2566,25 @@ window.CommonPopupManager = {
         INVALID_TEXT: "無効なテキスト",
         BITMAP_CREATE_FAILED: "ビットマップ生成失敗",
         WINDOW_NOT_READY: "ウィンドウ未準備",
-        INVALID_POSITION: "無効な位置情報"
+        INVALID_POSITION: "無効な位置情報",
     };
 
     // エラーログ出力の統一
-    CommonPopupManager.logError = function(type, details = "") {
+    CommonPopupManager.logError = function (type, details = "") {
         console.error(`CommonPopupManager: ${this.ERROR_TYPES[type]}`, details);
     };
 
     // 警告ログ出力の統一
-    CommonPopupManager.logWarning = function(type, details = "") {
+    CommonPopupManager.logWarning = function (type, details = "") {
         console.warn(`CommonPopupManager: ${this.ERROR_TYPES[type]}`, details);
     };
 
     // バリデーション関数の追加
-    CommonPopupManager.validatePopupParameters = function(object, value, type) {
+    CommonPopupManager.validatePopupParameters = function (
+        object,
+        value,
+        type
+    ) {
         if (!object) {
             this.logError("INVALID_OBJECT");
             return false;
@@ -2448,15 +2603,21 @@ window.CommonPopupManager = {
     };
 
     // 型チェック関数
-    CommonPopupManager.isValidType = function(type) {
+    CommonPopupManager.isValidType = function (type) {
         const validTypes = [
-            "gold", "item", "exp", "level", "abp",
-            "classLevel", "param", "skill"
+            "gold",
+            "item",
+            "exp",
+            "level",
+            "abp",
+            "classLevel",
+            "param",
+            "skill",
         ];
         return validTypes.includes(type);
     };
 
-    CommonPopupManager.optimizeBitmap = function(bitmap) {
+    CommonPopupManager.optimizeBitmap = function (bitmap) {
         // ビットマップのキャッシュ管理
         if (!this._bitmapCache) {
             this._bitmapCache = new Map();
@@ -2477,42 +2638,44 @@ window.CommonPopupManager = {
         return bitmap;
     };
 
-    CommonPopupManager.generateBitmapKey = function(bitmap) {
+    CommonPopupManager.generateBitmapKey = function (bitmap) {
         return `${bitmap.width}_${bitmap.height}_${Date.now()}`;
     };
 
-    CommonPopupManager.cleanupSprites = function() {
+    CommonPopupManager.cleanupSprites = function () {
         // 不要なスプライトの削除
         if (this._tempCommonSprites) {
-            this._tempCommonSprites = this._tempCommonSprites.filter(sprite => {
-                if (!sprite || sprite.terminate) {
-                    if (sprite && sprite.bitmap) {
-                        sprite.bitmap.destroy();
+            this._tempCommonSprites = this._tempCommonSprites.filter(
+                (sprite) => {
+                    if (!sprite || sprite.terminate) {
+                        if (sprite && sprite.bitmap) {
+                            sprite.bitmap.destroy();
+                        }
+                        return false;
                     }
-                    return false;
+                    return true;
                 }
-                return true;
-            });
+            );
         }
     };
 
-    CommonPopupManager.manageMemory = function() {
+    CommonPopupManager.manageMemory = function () {
         // スプライトの定期的なクリーンアップ
         this.cleanupSprites();
-        
+
         // ビットマップキャッシュの管理
         this.manageBitmapCache();
-        
+
         // 不要なポップアップの削除
         this.cleanupPopups();
     };
 
-    CommonPopupManager.manageBitmapCache = function() {
+    CommonPopupManager.manageBitmapCache = function () {
         if (!this._bitmapCache) return;
-        
+
         const now = Date.now();
         const CACHE_LIFETIME = 60000; // 60秒
-        
+
         // 古いキャッシュの削除
         for (const [key, data] of this._bitmapCache.entries()) {
             if (now - data.timestamp > CACHE_LIFETIME) {
@@ -2524,26 +2687,29 @@ window.CommonPopupManager = {
         }
     };
 
-    CommonPopupManager.cleanupPopups = function() {
+    CommonPopupManager.cleanupPopups = function () {
         if (!this._setedPopups) return;
-        
+
         // 終了したポップアップの削除
-        this._setedPopups = this._setedPopups.filter(popup => {
+        this._setedPopups = this._setedPopups.filter((popup) => {
             if (!popup || popup[2] <= 0) {
                 return false;
             }
             return true;
         });
-        
+
         // 配列の最適化
-        if (this._setedPopups.length > 0 && this._setedPopups.length < this._setedPopups.capacity) {
+        if (
+            this._setedPopups.length > 0 &&
+            this._setedPopups.length < this._setedPopups.capacity
+        ) {
             this._setedPopups = this._setedPopups.slice();
         }
     };
 
     // Scene_Base拡張
     var _Scene_Base_update = Scene_Base.prototype.update;
-    Scene_Base.prototype.update = function() {
+    Scene_Base.prototype.update = function () {
         _Scene_Base_update.call(this);
         // 10秒ごとに軽いメモリ管理を実行
         if (Graphics.frameCount % 600 === 0) {
@@ -2551,13 +2717,16 @@ window.CommonPopupManager = {
         }
     };
 
-    Scene_Base.prototype.performLightMemoryManagement = function() {
+    Scene_Base.prototype.performLightMemoryManagement = function () {
         if (CommonPopupManager._bitmapCache) {
             // 古いキャッシュのみを削除
             const now = Date.now();
             const CACHE_LIFETIME = 300000; // 5分
-            
-            for (const [key, data] of CommonPopupManager._bitmapCache.entries()) {
+
+            for (const [
+                key,
+                data,
+            ] of CommonPopupManager._bitmapCache.entries()) {
                 if (now - data.timestamp > CACHE_LIFETIME) {
                     CommonPopupManager._bitmapCache.delete(key);
                 }
@@ -2565,57 +2734,86 @@ window.CommonPopupManager = {
         }
     };
 
-    CommonPopupManager.setupPopupPosition = function(arg, height) {
-        switch (infoPattern) {
+    CommonPopupManager.setupPopupPosition = function (
+        arg,
+        height,
+        position,
+        pattern
+    ) {
+        // 位置とパターンに応じた設定
+        switch (pattern) {
             case "GrowUp":
                 arg.x = infoSupX;
-                arg.y = Graphics.height;
+                if (position === "Top") {
+                    arg.y = -height; // 画面上端の外から開始
+                    arg.moveY = height * 2; // 下方向への移動距離を2倍に
+                    arg.anchorY = 0;
+                } else {
+                    arg.y = Graphics.height;
+                    arg.moveY = -height;
+                    arg.anchorY = 1.0;
+                }
                 arg.moveX = 0;
                 arg.anchorX = 0;
-                arg.anchorY = 1.0;
                 arg.pattern = -2;
-                if (infoSlideAction === "Down") arg.anchorY = 0;
                 break;
-                
+
             case "Stretch":
                 arg.x = infoSupX;
-                arg.y = Graphics.height - height;
+                arg.y = position === "Top" ? 0 : Graphics.height - height;
                 arg.moveX = 0;
                 arg.anchorX = 0;
                 arg.anchorY = 0;
                 arg.pattern = -1;
                 break;
-                
-            default:
+
+            default: // Normal
                 arg.x = Graphics.boxWidth * -1 + infoSupX;
-                arg.y = Graphics.height - height;
+                arg.y = position === "Top" ? 0 : Graphics.height - height;
                 arg.moveX = Graphics.boxWidth;
                 arg.anchorX = 0;
                 arg.anchorY = 0;
+                arg.pattern = 0;
         }
     };
 
-    CommonPopupManager.adjustBattleWindowPosition = function(arg, height) {
+    CommonPopupManager.adjustBattleWindowPosition = function (arg, height) {
         // メッセージウィンドウとの位置調整
-        if ($gameParty.inBattle() && 
-            SceneManager._scene._messageWindow?.active) {
+        if (
+            $gameParty.inBattle() &&
+            SceneManager._scene._messageWindow?.active
+        ) {
             if (SceneManager._scene._messageWindow._positionType === 2) {
                 const messageWindowY = SceneManager._scene._messageWindow.y;
-                arg.y = Math.min(arg.y, messageWindowY - height + height * arg.anchorY);
+                arg.y = Math.min(
+                    arg.y,
+                    messageWindowY - height + height * arg.anchorY
+                );
             }
         }
 
         // ステータスウィンドウとの位置調整
-        if (SceneManager._scene._statusWindow?.isOpen() &&
-            (!$gameMessage.isBusy() || InfoMVstyle)) {
+        if (
+            SceneManager._scene._statusWindow?.isOpen() &&
+            (!$gameMessage.isBusy() || InfoMVstyle)
+        ) {
             const statusWindowY = SceneManager._scene._statusWindow.y;
-            arg.y = Math.min(arg.y, statusWindowY - height + height * arg.anchorY);
+            arg.y = Math.min(
+                arg.y,
+                statusWindowY - height + height * arg.anchorY
+            );
         }
     };
 
-    CommonPopupManager.replaceTextPlaceholders = function(text, object, actor, className, value) {
+    CommonPopupManager.replaceTextPlaceholders = function (
+        text,
+        object,
+        actor,
+        className,
+        value
+    ) {
         const descriptions = object.description?.split(/\n/) || [];
-        
+
         if (actor) {
             const gameActor = $gameActors.actor(actor);
             text = text.replace(/_actor/g, gameActor.name());
@@ -2624,24 +2822,24 @@ window.CommonPopupManager = {
                 gameActor.actorId() + actorIconStartIndex - 1
             );
         }
-        
+
         const replacements = {
             _class: className || "",
             _name: object.name || "",
             _icon: object.iconIndex || "",
             _num: Math.abs(value),
             _desc1: descriptions[0] || "",
-            _desc2: descriptions[1] || ""
+            _desc2: descriptions[1] || "",
         };
-        
+
         return Object.entries(replacements).reduce((text, [key, value]) => {
-            return text.replace(new RegExp(key, 'g'), value);
+            return text.replace(new RegExp(key, "g"), value);
         }, text);
     };
 
-    CommonPopupManager.getTextByType = function(type, value, object) {
+    CommonPopupManager.getTextByType = function (type, value, object) {
         let text = null;
-        
+
         switch (type) {
             case "gold":
                 text = value < 0 ? lostGoldText : getGoldText;
@@ -2693,32 +2891,44 @@ window.CommonPopupManager = {
             default:
                 text = value;
         }
-        
+
         return text;
     };
 
-    CommonPopupManager.debugTest = function() {
+    CommonPopupManager.debugTest = function () {
         // アイテム獲得のテスト
-        this.testPopup('item', {
-            name: "ポーション",
-            iconIndex: 176,
-            description: "体力を回復する薬\n使用すると30回復"
-        }, 1);
-        
+        this.testPopup(
+            "item",
+            {
+                name: "ポーション",
+                iconIndex: 176,
+                description: "体力を回復する薬\n使用すると30回復",
+            },
+            1
+        );
+
         // お金獲得のテスト
-        this.testPopup('gold', {
-            name: "所持金",
-            iconIndex: 314
-        }, 1000);
-        
+        this.testPopup(
+            "gold",
+            {
+                name: "所持金",
+                iconIndex: 314,
+            },
+            1000
+        );
+
         // 経験値獲得のテスト
-        this.testPopup('exp', {
-            name: "経験値",
-            value: true
-        }, 100);
+        this.testPopup(
+            "exp",
+            {
+                name: "経験値",
+                value: true,
+            },
+            100
+        );
     };
 
-    CommonPopupManager.testPopup = function(type, object, value) {
+    CommonPopupManager.testPopup = function (type, object, value) {
         try {
             this.showInfo(object, value, type);
             console.log(`テスト成功: ${type}のポップアップを表示`);
@@ -2727,19 +2937,23 @@ window.CommonPopupManager = {
         }
     };
 
-    CommonPopupManager.openDebugMenu = function() {
+    CommonPopupManager.openDebugMenu = function () {
         const scene = SceneManager._scene;
         const rect = new Rectangle(0, 0, 400, 300);
         rect.x = (Graphics.boxWidth - rect.width) / 2;
         rect.y = (Graphics.boxHeight - rect.height) / 2;
-        
+
         const window = new Window_PopupDebugMenu(rect);
         scene.addWindow(window);
         window.show();
         window.activate();
     };
 
-    CommonPopupManager.validatePopupParameters = function(object, value, type) {
+    CommonPopupManager.validatePopupParameters = function (
+        object,
+        value,
+        type
+    ) {
         if (!object) {
             console.warn("CommonPopupManager: objectが未定義です");
             return false;
@@ -2750,237 +2964,386 @@ window.CommonPopupManager = {
         return true;
     };
 
-    CommonPopupManager.applyColorCode = function(text, object) {
+    CommonPopupManager.applyColorCode = function (text, object) {
         let colorCode = "";
         let defcolorCode = "\\C[0]";
-        
+
         if (object.meta && object.meta.NameColor) {
             const colorIndex = parseInt(object.meta.NameColor);
             if (!isNaN(colorIndex) && colorIndex >= 0) {
                 colorCode = "\\C[" + colorIndex + "]";
             }
         }
-    
+
         // _nameの色を変更
         if (colorCode) {
-            text = text.replace(
-                /(_name)/g,
-                colorCode + "$1" + defcolorCode
-            );
+            text = text.replace(/(_name)/g, colorCode + "$1" + defcolorCode);
         }
-        
+
         return text;
     };
-})();
 
-// Window_Baseの代わりに専用のウィンドウクラスを作成
-function Window_CommonPopup() {
-    this.initialize(...arguments);
-}
+    // テキストポップアップ専用のメソッド
+    CommonPopupManager.showTextPopup = function (fontsize, text, options = {}) {
+        const position = options.position || infoPosition;
+        const pattern = options.pattern || infoPattern;
+        const slideAction = options.slideAction || infoSlideAction;
 
-Window_CommonPopup.prototype = Object.create(Window_Base.prototype);
-Window_CommonPopup.prototype.constructor = Window_CommonPopup;
+        // 設定を一時的に変更
+        this._currentObject = {
+            _tempSettings: {
+                position: position,
+                pattern: pattern,
+                slideAction: slideAction,
+            },
+        };
 
-// 専用のアイコン描画メソッド
-Window_CommonPopup.prototype.drawScaledIcon = function(iconIndex, x, y, fontSize) {
-    const bitmap = ImageManager.loadSystem("IconSet");
-    const pw = ImageManager.iconWidth;
-    const ph = ImageManager.iconHeight;
-    const sx = (iconIndex % 16) * pw;
-    const sy = Math.floor(iconIndex / 16) * ph;
-    
-    // フォントサイズに基づくスケール計算
-    const defaultFontSize = 28; // RPGツクールMZのデフォルトフォントサイズ
-    const scale = Math.min(fontSize / defaultFontSize, 1.2); // 最大1.2倍まで
-    
-    // アイコンサイズの計算
-    const dw = Math.floor(pw * scale);
-    const dh = Math.floor(ph * scale);
-    
-    // Y位置の微調整（アイコンを垂直方向に中央揃え）
-    const yOffset = Math.max(0, Math.floor((fontSize - dh) / 2));
-    const adjustedY = y + yOffset;
-    
-    this.contents.blt(bitmap, sx, sy, pw, ph, x, adjustedY, dw, dh);
-    
-    return dw; // アイコンの描画幅を返す（テキスト位置の調整用）
-};
-
-// CommonPopupManagerの修正
-CommonPopupManager.window = function() {
-    if (this._window) {
-        return this._window;
-    }
-    this._window = new Window_CommonPopup(0, 0, Graphics.boxWidth, Graphics.boxHeight);
-    return this._window;
-};
-
-// アイコン描画処理の修正
-Window_CommonPopup.prototype.processDrawIcon = function(iconIndex, textState) {
-    if (textState.drawing) {
-        const lineY = textState.y + (this.lineHeight() - this.contents.fontSize) / 2;
-        const iconWidth = this.drawScaledIcon(
-            iconIndex,
-            textState.x + 2,
-            lineY,
-            this.contents.fontSize
+        const { bitmap, texts, oneHeight, height } = this.createtextInfoBitmap(
+            fontsize,
+            text
         );
-        textState.x += iconWidth + 4; // アイコンの実際の幅に基づいて位置を調整
-    }
-};
+        let sh = -(oneHeight - fontsize) / 2;
+        if (fontsize >= 20) {
+            sh = 0;
+        } else {
+            sh = ((20 - fontsize) / 2 + 2) * -1;
+        }
 
-// プラグインコマンドの登録
-PluginManager.registerCommand("SKM_GetInformation", "testPopup", args => {
-    const type = args.type;
-    const value = Number(args.value || 1);
-    const object = {
-        name: args.name || "テストアイテム",
-        iconIndex: Number(args.iconIndex || 0),
-        description: args.description || "",
-        value: args.value > 0  // exp等で使用
+        this.window().contents = bitmap;
+        //this.window().drawTextEx("\\FS[" + infoFontSize + "]", 0, 0);
+        this.drawPopupTexts(texts, oneHeight, sh, "text");
+
+        // 標準のdisplayPopup処理を使用
+        this.displayPopup(
+            bitmap,
+            { name: "", volume: 0, pitch: 100 },
+            height,
+            texts
+        );
+
+        // 設定を元に戻す
+        this._currentObject = null;
     };
-    CommonPopupManager.showInfo(object, value, type);
-});
 
-// デバッグメニューウィンドウの作成
-function Window_PopupDebugMenu() {
-    this.initialize(...arguments);
-}
+    CommonPopupManager.createtextInfoBitmap = function (fontsize, text1) {
+        // テキストの分割と前処理
+        const texts = text1
+            .split(/\n|\\n/)
+            .filter((line) => {
+                const stripped = line.replace(/\\C\[\d+\]/g, "");
+                return stripped !== "";
+            })
+            .compact();
 
-Window_PopupDebugMenu.prototype = Object.create(Window_Command.prototype);
-Window_PopupDebugMenu.prototype.constructor = Window_PopupDebugMenu;
+        // システムログへの追加
+        $gameSystem.pushInfoLog(text1);
 
-Window_PopupDebugMenu.prototype.initialize = function(rect) {
-    Window_Command.prototype.initialize.call(this, rect);
-    this.select(0);
-};
+        // ビットマップのサイズ計算
+        const oneHeight = fontsize + 8;
+        const height = oneHeight * texts.length;
+        const bitmap = new Bitmap(Graphics.boxWidth, height);
 
-Window_PopupDebugMenu.prototype.makeCommandList = function() {
-    this.addCommand("アイテム獲得テスト", "item");
-    this.addCommand("お金獲得テスト", "gold");
-    this.addCommand("経験値獲得テスト", "exp");
-    this.addCommand("全パターンテスト", "all");
-    this.addCommand("閉じる", "cancel");
-};
+        // 背景の描画
+        this.drawBackground(bitmap);
 
-Window_PopupDebugMenu.prototype.processOk = function() {
-    const symbol = this.currentSymbol();
-    if (symbol === "cancel") {
-        this.close();
-        return;
+        return { bitmap, texts, oneHeight, height };
+    };
+
+    // テキストポップアップ用の引数生成
+    CommonPopupManager.createTextPopupArguments = function (
+        bitmap,
+        height,
+        position,
+        pattern,
+        slideAction
+    ) {
+        const arg = this.setPopup([]);
+        arg.bitmap = bitmap;
+        arg.enableOutEffect = enableOutMove;
+
+        // 前のポップアップの位置を考慮
+        let baseY = position === "Top" ? 0 : Graphics.height;
+        if (this._tempCommonSprites) {
+            const sprites = this._tempCommonSprites.compact();
+            for (const sprite of sprites) {
+                if (position === "Top" && sprite.y > baseY) {
+                    baseY = sprite.y + height;
+                } else if (position !== "Top" && sprite.y < baseY) {
+                    baseY = sprite.y - height;
+                }
+            }
+        }
+
+        // パターンに応じた設定
+        switch (pattern) {
+            case "GrowUp":
+                arg.x = infoSupX;
+                if (position === "Top") {
+                    if (slideAction === "Down") {
+                        arg.y = baseY; // 前のポップアップの下に
+                        arg.moveY = height; // 下方向への移動
+                        arg.anchorY = 0;
+                    } else {
+                        arg.y = height;
+                        arg.moveY = -height;
+                        arg.anchorY = 1.0;
+                    }
+                } else {
+                    arg.y = Graphics.height;
+                    arg.moveY = -height;
+                    arg.anchorY = 1.0;
+                }
+                arg.moveX = 0;
+                arg.anchorX = 0;
+                arg.pattern = -2;
+                break;
+
+            case "Stretch":
+                arg.x = infoSupX;
+                arg.y = position === "Top" ? 0 : Graphics.height - height;
+                arg.moveX = 0;
+                arg.anchorX = 0;
+                arg.anchorY = 0;
+                arg.pattern = -1;
+                break;
+
+            default: // Normal
+                arg.x = Graphics.boxWidth * -1 + infoSupX;
+                arg.y = position === "Top" ? 0 : Graphics.height - height;
+                arg.moveX = Graphics.boxWidth;
+                arg.anchorX = 0;
+                arg.anchorY = 0;
+                arg.pattern = 0;
+        }
+
+        // 基本設定
+        arg.moveY = 0;
+        arg.count = infoCount;
+        arg.fixed = false;
+        arg.extend = [infoMoveFade, infoMoveWait];
+        arg.slideCount = infoSlideCount;
+        arg.delay = this.calculatePopupDelay();
+        arg.slideAction = slideAction;
+
+        return arg;
+    };
+
+    // Window_Baseの代わりに専用のウィンドウクラスを作成
+    function Window_CommonPopup() {
+        this.initialize(...arguments);
     }
-    if (symbol === "all") {
-        CommonPopupManager.debugTest();
-    } else {
-        CommonPopupManager.testPopup(symbol, this.getTestObject(symbol), this.getTestValue(symbol));
+
+    Window_CommonPopup.prototype = Object.create(Window_Base.prototype);
+    Window_CommonPopup.prototype.constructor = Window_CommonPopup;
+
+    // 専用のアイコン描画メソッド
+    Window_CommonPopup.prototype.drawScaledIcon = function (
+        iconIndex,
+        x,
+        y,
+        fontSize
+    ) {
+        const bitmap = ImageManager.loadSystem("IconSet");
+        const pw = ImageManager.iconWidth;
+        const ph = ImageManager.iconHeight;
+        const sx = (iconIndex % 16) * pw;
+        const sy = Math.floor(iconIndex / 16) * ph;
+
+        // フォントサイズに基づくスケール計算
+        const defaultFontSize = 28; // RPGツクールMZのデフォルトフォントサイズ
+        const scale = Math.min(fontSize / defaultFontSize, 1.2); // 最大1.2倍まで
+
+        // アイコンサイズの計算
+        const dw = Math.floor(pw * scale);
+        const dh = Math.floor(ph * scale);
+
+        // Y位置の微調整（アイコンを垂直方向に中央揃え）
+        const yOffset = Math.max(0, Math.floor((fontSize - dh) / 2));
+        // テキストタイプの場合のみ位置調整を適用
+        const adjustedY =
+            y + yOffset + (CommonPopupManager._type === "text" ? -1 : 0);
+
+        this.contents.blt(bitmap, sx, sy, pw, ph, x, adjustedY, dw, dh);
+
+        return dw; // アイコンの描画幅を返す（テキスト位置の調整用）
+    };
+
+    // CommonPopupManagerの修正
+    CommonPopupManager.window = function () {
+        if (this._window) {
+            return this._window;
+        }
+        this._window = new Window_CommonPopup(
+            0,
+            0,
+            Graphics.boxWidth,
+            Graphics.boxHeight
+        );
+        return this._window;
+    };
+
+    // アイコン描画処理の修正
+    Window_CommonPopup.prototype.processDrawIcon = function (
+        iconIndex,
+        textState
+    ) {
+        if (textState.drawing) {
+            const lineY =
+                textState.y + (this.lineHeight() - this.contents.fontSize) / 2;
+            const iconWidth = this.drawScaledIcon(
+                iconIndex,
+                textState.x + 2,
+                lineY,
+                this.contents.fontSize
+            );
+            textState.x += iconWidth + 4; // アイコンの実際の幅に基づいて位置を調整
+        }
+    };
+
+    // デバッグメニューウィンドウの作成
+    function Window_PopupDebugMenu() {
+        this.initialize(...arguments);
     }
-};
 
-Window_PopupDebugMenu.prototype.getTestObject = function(type) {
-    switch (type) {
-        case "item":
-            return {
-                name: "ポーション",
-                iconIndex: 176,
-                description: "体力を回復する薬\n使用すると30回復"
-            };
-        case "gold":
-            return {
-                name: "所持金",
-                iconIndex: 314
-            };
-        case "exp":
-            return {
-                name: "経験値",
-                value: true
-            };
-        default:
-            return {};
-    }
-};
+    Window_PopupDebugMenu.prototype = Object.create(Window_Command.prototype);
+    Window_PopupDebugMenu.prototype.constructor = Window_PopupDebugMenu;
 
-Window_PopupDebugMenu.prototype.getTestValue = function(type) {
-    switch (type) {
-        case "gold":
-            return 1000;
-        case "exp":
-            return 100;
-        default:
-            return 1;
-    }
-};
+    Window_PopupDebugMenu.prototype.initialize = function (rect) {
+        Window_Command.prototype.initialize.call(this, rect);
+        this.select(0);
+    };
 
-const _Scene_Map_updateDebugMenu = Scene_Map.prototype.updateDebugMenu;
-Scene_Map.prototype.updateDebugMenu = function() {
-    _Scene_Map_updateDebugMenu.call(this);
-    if (Input.isTriggered("debug") && $gameTemp.isPlaytest()) {
-        CommonPopupManager.openDebugMenu();
-    }
-};
+    Window_PopupDebugMenu.prototype.makeCommandList = function () {
+        this.addCommand("アイテム獲得テスト", "item");
+        this.addCommand("お金獲得テスト", "gold");
+        this.addCommand("経験値獲得テスト", "exp");
+        this.addCommand("全パターンテスト", "all");
+        this.addCommand("閉じる", "cancel");
+    };
 
-const params = PluginManager.parameters('SKM_GetInformation');
-const debugKey = params['debugKey'] || '';
+    Window_PopupDebugMenu.prototype.processOk = function () {
+        const symbol = this.currentSymbol();
+        if (symbol === "cancel") {
+            this.close();
+            return;
+        }
+        if (symbol === "all") {
+            CommonPopupManager.debugTest();
+        } else {
+            CommonPopupManager.testPopup(
+                symbol,
+                this.getTestObject(symbol),
+                this.getTestValue(symbol)
+            );
+        }
+    };
 
-if (debugKey) {
-    const _Scene_Map_update = Scene_Map.prototype.update;
-    Scene_Map.prototype.update = function() {
-        _Scene_Map_update.call(this);
-        if (Input.isTriggered(debugKey) && $gameTemp.isPlaytest()) {
+    Window_PopupDebugMenu.prototype.getTestObject = function (type) {
+        switch (type) {
+            case "item":
+                return {
+                    name: "ポーション",
+                    iconIndex: 176,
+                    description: "体力を回復する薬\n使用すると30回復",
+                };
+            case "gold":
+                return {
+                    name: "所持金",
+                    iconIndex: 314,
+                };
+            case "exp":
+                return {
+                    name: "経験値",
+                    value: true,
+                };
+            default:
+                return {};
+        }
+    };
+
+    Window_PopupDebugMenu.prototype.getTestValue = function (type) {
+        switch (type) {
+            case "gold":
+                return 1000;
+            case "exp":
+                return 100;
+            default:
+                return 1;
+        }
+    };
+
+    const _Scene_Map_updateDebugMenu = Scene_Map.prototype.updateDebugMenu;
+    Scene_Map.prototype.updateDebugMenu = function () {
+        _Scene_Map_updateDebugMenu.call(this);
+        if (Input.isTriggered("debug") && $gameTemp.isPlaytest()) {
             CommonPopupManager.openDebugMenu();
         }
     };
-}
 
-const keepPopupsInMenu = params['keepPopupsInMenu'] || 'clear';
+    const params = PluginManager.parameters("SKM_GetInformation");
+    const debugKey = params["debugKey"] || "";
 
-// Scene_Map でメニュー遷移時の処理
-const _Scene_Map_callMenu = Scene_Map.prototype.callMenu;
-Scene_Map.prototype.callMenu = function() {
-    this.terminatePopup();  // 常に消去する
-    _Scene_Map_callMenu.call(this);
-};
-
-// Game_Party拡張
-const _Game_Party = {
-    gainGold: Game_Party.prototype.gainGold,
-    gainItem: Game_Party.prototype.gainItem,
-};
-
-// 戦闘隊形関連の機能を追加
-Game_Party.prototype.battleFormation = function() {
-    if (!this._battleFormation) {
-        this._battleFormation = {
-            level: 0,
-            exp: 0
+    if (debugKey) {
+        const _Scene_Map_update = Scene_Map.prototype.update;
+        Scene_Map.prototype.update = function () {
+            _Scene_Map_update.call(this);
+            if (Input.isTriggered(debugKey) && $gameTemp.isPlaytest()) {
+                CommonPopupManager.openDebugMenu();
+            }
         };
     }
-    return this._battleFormation;
-};
 
-Game_Party.prototype.gainFormationExp = function(exp) {
-    const formation = this.battleFormation();
-    const maxLevel = 10;  // 最大レベル
-    
-    if (formation.level >= maxLevel) return false;
-    
-    formation.exp += exp;
-    const nextExp = this.nextFormationLevelExp();
-    
-    if (formation.exp >= nextExp) {
-        formation.level++;
-        formation.exp = 0;
-        return true;
-    }
-    
-    return false;
-};
+    const keepPopupsInMenu = params["keepPopupsInMenu"] || "clear";
 
-Game_Party.prototype.nextFormationLevelExp = function() {
-    const formation = this.battleFormation();
-    return 100 * Math.pow(2, formation.level);  // レベルに応じて必要経験値増加
-};
+    // Scene_Map でメニュー遷移時の処理
+    const _Scene_Map_callMenu = Scene_Map.prototype.callMenu;
+    Scene_Map.prototype.callMenu = function () {
+        this.terminatePopup(); // 常に消去する
+        _Scene_Map_callMenu.call(this);
+    };
 
-Game_Party.prototype.isMaxBfLevel = function() {
-    const formation = this.battleFormation();
-    return formation.level >= 10;  // 最大レベルは10
-};
+    // Window_InfoLog クラスにアイコン描画処理を追加
+    Window_InfoLog.prototype.processDrawIcon = function (iconIndex, textState) {
+        if (textState.drawing) {
+            const lineY =
+                textState.y + (this.lineHeight() - this.contents.fontSize) / 2;
+            const iconWidth = this.drawScaledIcon(
+                iconIndex,
+                textState.x + 2,
+                lineY,
+                this.contents.fontSize
+            );
+            textState.x += iconWidth + 4; // アイコンの実際の幅に基づいて位置を調整
+        }
+    };
+
+    // スケーリング対応のアイコン描画メソッドを追加
+    Window_InfoLog.prototype.drawScaledIcon = function (
+        iconIndex,
+        x,
+        y,
+        fontSize
+    ) {
+        const bitmap = ImageManager.loadSystem("IconSet");
+        const pw = ImageManager.iconWidth;
+        const ph = ImageManager.iconHeight;
+        const sx = (iconIndex % 16) * pw;
+        const sy = Math.floor(iconIndex / 16) * ph;
+
+        // フォントサイズに基づくスケール計算
+        const defaultFontSize = 28; // RPGツクールMZのデフォルトフォントサイズ
+        const scale = Math.min(fontSize / defaultFontSize, 1.2); // 最大1.2倍まで
+
+        // アイコンサイズの計算
+        const dw = Math.floor(pw * scale);
+        const dh = Math.floor(ph * scale);
+
+        // Y位置の微調整（アイコンを垂直方向に中央揃え）
+        const yOffset = Math.max(0, Math.floor((fontSize - dh) / 2));
+        const adjustedY = y + yOffset;
+
+        this.contents.blt(bitmap, sx, sy, pw, ph, x, adjustedY, dw, dh);
+
+        return dw; // アイコンの描画幅を返す（テキスト位置の調整用）
+    };
+})();
