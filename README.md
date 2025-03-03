@@ -14,6 +14,11 @@
 
 -   [アクターカードスタイルプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md)
 
+
+### MVより移植
+- [メニューコマンド並び替え](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSortMZ.js)
+
+
 ## 利用規約
 
 -   クレジット表記は不要です
