@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------------------
 /*:ja
  * @target MZ
- * @plugindesc アクター画像変更システム v1.3.1
+ * @plugindesc アクター画像変更システム v1.3.2
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/tree/main
  *
@@ -277,6 +277,7 @@
  * - 一応の対策として、画像がない場合は音がなって容姿の切り替えはできなくなっております。
  *
  * 【開発履歴】
+ * v1.3.2 2025/03/03 - コモンイベントからの呼び出し時にバグが出ていたのを修正
  * v1.3.1 2025/02/14 - アクターIDの変数指定を復活
  * v1.3.0 2025/02/09 - リファクタリング後、元の動作を再現するまで修正。機能追加。
  *
@@ -650,19 +651,28 @@ let globalConfigCAIS = null;
                 // アクターIDの取得と検証
                 let actorId;
                 if (args.useVariable === "true") {
-                    // 変数からIDを取得
-                    const varValue = $gameVariables.value(
-                        Number(args.change_actorId)
-                    );
+                    // 変数の番号を保存
+                    const variableId = Number(args.change_actorId);
+                    if (!Number.isInteger(variableId) || variableId < 1) {
+                        throw new Error(
+                            `変数IDが不正です: ${args.change_actorId}\n` +
+                                `変数IDは1以上の整数である必要があります。`
+                        );
+                    }
+                    // 変数の値を取得
+                    const varValue = $gameVariables.value(variableId);
                     if (!Number.isInteger(varValue) || varValue < 1) {
                         throw new Error(
-                            `変数[${args.change_actorId}]の値が不正です: ${varValue}\n` +
+                            `変数[${variableId}]の値が不正です: ${varValue}\n` +
                                 `アクターIDは1以上の整数である必要があります。`
                         );
                     }
                     actorId = varValue;
+
+                    // 変数IDを保存（後で使用するため）
+                    globalConfigCAIS._sceneState.variableId = variableId;
+                    globalConfigCAIS._sceneState.useVariable = true;
                 } else {
-                    // 直接指定の場合
                     actorId = Number(args.change_actorId);
                     if (!Number.isInteger(actorId) || actorId < 1) {
                         throw new Error(
@@ -670,6 +680,8 @@ let globalConfigCAIS = null;
                                 `アクターIDは1以上の整数である必要があります。`
                         );
                     }
+                    // 変数使用フラグをオフに
+                    globalConfigCAIS._sceneState.useVariable = false;
                 }
 
                 // アクターの存在確認
@@ -681,23 +693,15 @@ let globalConfigCAIS = null;
                     );
                 }
 
-                // 1ページの画像数の検証
-                if (args.image_load_maxsize !== "") {
-                    const maxImages = Number(args.image_load_maxsize);
-                    if (
-                        !Number.isInteger(maxImages) ||
-                        maxImages < 1 ||
-                        maxImages > 8
-                    ) {
-                        throw new Error(
-                            `1ページの画像数が不正です: ${args.image_load_maxsize}\n` +
-                                `1から8までの整数を指定してください。`
-                        );
-                    }
+                // パラメータを更新（変数の場合は変数IDをそのまま保持）
+                if (globalConfigCAIS._sceneState.useVariable) {
+                    args.change_actorId = String(
+                        globalConfigCAIS._sceneState.variableId
+                    );
+                } else {
+                    args.change_actorId = String(actorId);
                 }
 
-                // パラメータを更新
-                args.change_actorId = String(actorId); // 変数で取得した場合に備えて文字列に変換
                 globalConfigCAIS.updateFromPluginCommand(args);
 
                 if (SceneManager._scene._choiceListWindow) {
@@ -708,7 +712,7 @@ let globalConfigCAIS = null;
             } catch (e) {
                 console.error(e.message);
                 if (Utils.isOptionValid("test")) {
-                    alert(e.message); // テストプレイ時はアラート表示
+                    alert(e.message);
                 }
                 return;
             }
@@ -1110,7 +1114,17 @@ let globalConfigCAIS = null;
         name,
         index
     ) {
-        const actor = $gameActors.actor(globalConfigCAIS.changeActorId);
+        // 現在の正しいアクターIDを取得
+        let currentActorId;
+        if (globalConfigCAIS._sceneState.useVariable) {
+            currentActorId = $gameVariables.value(
+                globalConfigCAIS._sceneState.variableId
+            );
+        } else {
+            currentActorId = globalConfigCAIS.changeActorId;
+        }
+
+        const actor = $gameActors.actor(currentActorId);
         const adjustedIndex = index - 1; // インデックスを0ベースに変換
 
         // 顔画像は常に更新
@@ -1232,17 +1246,25 @@ let globalConfigCAIS = null;
     };
 
     Window_ActorInformationAndDescription.prototype.drawHelpText = function () {
-        const actor = $gameActors.actor(globalConfigCAIS.changeActorId);
+        let actorId;
+        if (globalConfigCAIS._sceneState.useVariable) {
+            // 保存された変数IDから現在の値を取得
+            actorId = $gameVariables.value(
+                globalConfigCAIS._sceneState.variableId
+            );
+        } else {
+            actorId = globalConfigCAIS.changeActorId;
+        }
+
+        const actor = $gameActors.actor(actorId);
         const actorName = actor.name();
 
-        // アクター名と説明文の描画
         this.changeTextColor(
             ColorManager.textColor(globalConfigCAIS.textColor)
         );
         this.drawText(actorName + globalConfigCAIS.helpText, 48, 0);
         this.resetTextColor();
 
-        // アクターのキャラチップ描画
         this.drawCharacter(actor._characterName, actor._characterIndex, 20, 42);
     };
 
