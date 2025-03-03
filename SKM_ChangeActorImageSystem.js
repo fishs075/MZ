@@ -620,12 +620,10 @@ let globalConfigCAIS = null;
     // 設定インスタンスの生成
     const pluginName = document.currentScript.src.match(/^.*\/(.*).js$/)[1];
     const params = PluginManager.parameters(pluginName);
-    console.log("Plugin Parameters:", params);
 
     try {
         // グローバル変数に代入
         globalConfigCAIS = new ConfigManager_CAIS(params);
-        console.log("ConfigCAIS initialized:", globalConfigCAIS);
     } catch (e) {
         console.error("Failed to initialize ConfigCAIS:", e);
     }
