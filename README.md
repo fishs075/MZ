@@ -16,7 +16,7 @@
 
 
 ### MVより移植
-_ [メニューコマンド並び替え](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSortMZ.js)
+- [メニューコマンド並び替え](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSortMZ.js)
 
 
 ## 利用規約
