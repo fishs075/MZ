@@ -12,13 +12,13 @@
 
 -   [ポップアップ表示プラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_GetInformation.md)
 
--   [アクターカードスタイルプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/EquipTypeSeal.js)
+-   [アクターカードスタイルプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md)
 
 
 
 
 
--   [武器・防具タイプを封印するプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md)
+-   [武器・防具タイプを封印するプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/EquipTypeSeal.js)
 
 ### MVより移植
 - [メニューコマンド並び替え](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSortMZ.js)
