@@ -7,6 +7,13 @@
  * @help SKM_calfulmenu.js
  *
  * ■ 更新履歴
+ * v1.0.3 (2025/02/17)
+ *   - アイコン機能の追加
+ *     - 各コマンドにアイコンを設定可能
+ *     - アイコンの拡大率調整（0.1～2.0）
+ *     - アイコンの位置調整（X,Yオフセット）
+ *     - アイコンと文字の間隔調整
+ *
  * v1.0.1 - v1.0.2 (2025/02/16)
  *   - 選択時の演出を3パターンに分離（アニメーション/発光のみ/なし）
  *   - 発光パターンの追加（フロー、リップル）
@@ -28,7 +35,15 @@
  *    - グラデーション（オーシャン、サンセット、フォレストなど）
  *    - 特殊効果（ネオン、メタル）
  *
- * 2. 選択時の演出パターン
+ * 2. アイコン機能
+ *    - 各コマンドにアイコンを設定可能
+ *    - アイコンの拡大率調整（0.1～2.0）
+ *    - アイコンの位置調整（X,Yオフセット）
+ *    - アイコンと文字の間隔調整
+ *      - -1：デフォルト値（8ピクセル）を使用
+ *      - 0以上：指定したピクセル値を使用
+ *
+ * 3. 選択時の演出パターン
  *    プラグインパラメータで演出パターンを切り替えることができます。
  *    - アニメーションパターン（6種類）
  *      - ブリーズ：ふわふわと浮遊
@@ -44,7 +59,7 @@
  *      - リップル：波紋のような発光
  *    - なし：シンプルな表示
  *
- * 3. 枠線カスタマイズ
+ * 4. 枠線カスタマイズ
  *    - 枠線の有効/無効切り替え
  *    - 枠線の太さ調整（1-8px）
  *    - 枠線の色設定
@@ -74,6 +89,12 @@
  *
  * 7. 枠線カスタマイズ
  *    設定したカラーの周囲に枠線を表示することができます。
+ *
+ * 8. アイコン設定
+ *    - アイコンNo：表示するアイコンの番号（-1で無効）
+ *    - 拡大率：アイコンのサイズ（0.1で縮小、1.0で等倍、2.0で拡大）
+ *    - オフセットX/Y：アイコンの位置調整（-100～100）
+ *    - アイコンと文字の間隔：アイコンと文字の間隔（-1でデフォルト、0以上で指定値）
  *
  * 
  * 
@@ -219,6 +240,12 @@
  * @desc メニューコマンドの名前
  * @default
  *
+ * @param iconSettings
+ * @text アイコン設定
+ * @type struct<IconSettings>
+ * @desc アイコンの設定（アイコンNo、拡大率、オフセットX、オフセットY）
+ * @default {"iconIndex":0,"scale":1.0,"offsetX":0,"offsetY":0}
+ *
  * @param colorScheme
  * @text 色設定
  * @type select
@@ -294,6 +321,49 @@
  * @parent colorScheme
  */
 
+/*~struct~IconSettings:
+ * @param iconIndex
+ * @text アイコンNo
+ * @type number
+ * @min -1
+ * @max 255
+ * @desc 表示するアイコンの番号（-1で無効）
+ * @default -1
+ *
+ * @param scale
+ * @text 拡大率
+ * @type float
+ * @min 0.1
+ * @max 2.0
+ * @step 0.1
+ * @desc アイコンの拡大率（0.1で縮小、1.0で等倍、2.0で拡大）
+ * @default 1.0
+ *
+ * @param offsetX
+ * @text オフセットX
+ * @type number
+ * @min -100
+ * @max 100
+ * @desc アイコンのX座標オフセット
+ * @default 0
+ *
+ * @param offsetY
+ * @text オフセットY
+ * @type number
+ * @min -100
+ * @max 100
+ * @desc アイコンのY座標オフセット
+ * @default 0
+ *
+ * @param spacing
+ * @text アイコンと文字の間隔
+ * @type number
+ * @min -1
+ * @max 50
+ * @desc アイコンと文字の間隔（ピクセル）。-1でデフォルト値（8ピクセル）を使用
+ * @default -1
+ */
+
 (() => {
     const pluginName = document.currentScript.src.match(/^.*\/(.*).js$/)[1];
     const parameters = PluginManager.parameters(pluginName);
@@ -309,7 +379,30 @@
     const customColors = JSON.parse(parameters.CustomColors || "[]").map(
         (setting) => {
             try {
-                return JSON.parse(setting);
+                const parsed = JSON.parse(setting);
+                // iconSettingsが文字列の場合はJSONとして解析
+                if (typeof parsed.iconSettings === "string") {
+                    parsed.iconSettings = JSON.parse(parsed.iconSettings);
+                }
+                // 数値として解析
+                if (parsed.iconSettings) {
+                    parsed.iconSettings.iconIndex = Number(
+                        parsed.iconSettings.iconIndex
+                    );
+                    parsed.iconSettings.scale = parseFloat(
+                        parsed.iconSettings.scale
+                    );
+                    parsed.iconSettings.offsetX = Number(
+                        parsed.iconSettings.offsetX
+                    );
+                    parsed.iconSettings.offsetY = Number(
+                        parsed.iconSettings.offsetY
+                    );
+                    // spacingが-1の場合は8を使用
+                    const spacing = Number(parsed.iconSettings.spacing);
+                    parsed.iconSettings.spacing = spacing >= 0 ? spacing : 8;
+                }
+                return parsed;
             } catch (e) {
                 return {};
             }
@@ -433,18 +526,31 @@
 
         if (customStyle) {
             if (customStyle.colorScheme === "custom") {
-                return {
+                const style = {
                     backgroundColor: customStyle.backgroundColor,
                     backgroundColor2: customStyle.backgroundColor2,
                     backgroundColor3: customStyle.backgroundColor3,
                     textColor: customStyle.textColor,
                     angle: Number(customStyle.angle || 0),
+                    iconSettings: customStyle.iconSettings,
                 };
+                return style;
             }
-            return COLOR_PRESETS[customStyle.colorScheme] || COLOR_PRESETS.simple_blue;
+            const presetStyle =
+                COLOR_PRESETS[customStyle.colorScheme] ||
+                COLOR_PRESETS.simple_blue;
+            const style = {
+                ...presetStyle,
+                iconSettings: customStyle.iconSettings,
+            };
+            return style;
         }
 
-        return COLOR_PRESETS.simple_blue;
+        const defaultStyle = {
+            ...COLOR_PRESETS.simple_blue,
+            iconSettings: { iconIndex: -1 },
+        };
+        return defaultStyle;
     }
 
     // アニメーションスタイルを先に定義
@@ -611,14 +717,20 @@
                     rect.x + rect.width * 2,
                     rect.y
                 );
-                
+
                 const position = (count % 100) / 100;
-                gradient.addColorStop(Math.max(0, position - 0.3), "rgba(0, 0, 0, 0.2)");
+                gradient.addColorStop(
+                    Math.max(0, position - 0.3),
+                    "rgba(0, 0, 0, 0.2)"
+                );
                 gradient.addColorStop(position, "rgba(255, 255, 255, 0.8)");
-                gradient.addColorStop(Math.min(1, position + 0.3), "rgba(0, 0, 0, 0.2)");
-                
+                gradient.addColorStop(
+                    Math.min(1, position + 0.3),
+                    "rgba(0, 0, 0, 0.2)"
+                );
+
                 return gradient;
-            }
+            },
         },
         // 波紋のような発光
         ripple: {
@@ -643,14 +755,17 @@
                     rect.y + rect.height / 2,
                     rect.width
                 );
-                
+
                 const phase = (count % 60) / 60;
                 gradient.addColorStop(phase, "rgba(255, 255, 255, 0.8)");
-                gradient.addColorStop(Math.min(1, phase + 0.2), "rgba(0, 0, 0, 0.2)");
-                
+                gradient.addColorStop(
+                    Math.min(1, phase + 0.2),
+                    "rgba(0, 0, 0, 0.2)"
+                );
+
                 return gradient;
-            }
-        }
+            },
+        },
     };
 
     // 背景を消す
@@ -696,7 +811,7 @@
         _Window_MenuCommand_refresh.call(this);
     };
 
-    // 描画処理
+    // 描画処理を修正
     Window_MenuCommand.prototype.drawItem = function (index) {
         if (isAnimationEnabled) {
             this.drawAnimatedItem(index);
@@ -708,7 +823,11 @@
     };
 
     // グラデーション作成のヘルパー関数を追加
-    Window_MenuCommand.prototype.createCommandGradient = function (ctx, rect, style) {
+    Window_MenuCommand.prototype.createCommandGradient = function (
+        ctx,
+        rect,
+        style
+    ) {
         const angle = Number(style.angle || 0);
         const centerX = rect.x + rect.width / 2;
         const centerY = rect.y + rect.height / 2;
@@ -728,7 +847,10 @@
         );
 
         gradient.addColorStop(0, style.backgroundColor);
-        gradient.addColorStop(0.5, style.backgroundColor2 || style.backgroundColor);
+        gradient.addColorStop(
+            0.5,
+            style.backgroundColor2 || style.backgroundColor
+        );
         gradient.addColorStop(
             1,
             style.backgroundColor3 ||
@@ -739,7 +861,40 @@
         return gradient;
     };
 
-    // アニメーション無効時の描画処理
+    // アイコン描画用のヘルパー関数を修正
+    Window_MenuCommand.prototype.drawIcon = function (
+        iconIndex,
+        x,
+        y,
+        scale = 1.0,
+        offsetX = 0,
+        offsetY = 0
+    ) {
+        if (iconIndex >= 0) {
+            const bitmap = ImageManager.loadSystem("IconSet");
+            const pw = ImageManager.iconWidth;
+            const ph = ImageManager.iconHeight;
+            const sx = ((iconIndex % 16) * pw) | 0;
+            const sy = (((iconIndex / 16) | 0) * ph) | 0;
+
+            const scaledWidth = pw * scale;
+            const scaledHeight = ph * scale;
+
+            this.contents.blt(
+                bitmap,
+                sx,
+                sy,
+                pw,
+                ph,
+                x + offsetX,
+                y + offsetY,
+                scaledWidth,
+                scaledHeight
+            );
+        }
+    };
+
+    // 描画処理を修正
     Window_MenuCommand.prototype.drawStaticItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
@@ -763,14 +918,18 @@
         this.drawRoundedRect(ctx, itemRect, radius);
 
         // グラデーションの設定
-        const gradient = this.createCommandGradient(ctx, itemRect, commandStyle);
+        const gradient = this.createCommandGradient(
+            ctx,
+            itemRect,
+            commandStyle
+        );
         ctx.fillStyle = gradient;
         ctx.fill();
 
         if (isSelected) {
             // 白い縁取りをより明確に
-            ctx.strokeStyle = "rgba(255, 255, 255, 1.0)"; // 透明度を1.0に
-            ctx.lineWidth = 4; // 線を太く
+            ctx.strokeStyle = "rgba(255, 255, 255, 1.0)";
+            ctx.lineWidth = 4;
             ctx.stroke();
 
             // 選択時の光彩効果を追加
@@ -780,7 +939,6 @@
         }
 
         if (enableBorder) {
-            // 通常の描画の後に枠線を追加
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = borderWidth;
             ctx.stroke();
@@ -788,14 +946,55 @@
 
         ctx.restore();
 
-        // テキストの描画（選択時は白色に）
+        // アイコンとテキストの描画
         this.changeTextColor(isSelected ? "#FFFFFF" : commandStyle.textColor);
+
+        // アイコンとテキストの合計幅を計算
+        let totalWidth = this.textWidth(commandName);
+        if (
+            commandStyle.iconSettings &&
+            commandStyle.iconSettings.iconIndex >= 0
+        ) {
+            const spacing = commandStyle.iconSettings.spacing;
+            totalWidth +=
+                ImageManager.iconWidth * commandStyle.iconSettings.scale +
+                spacing;
+        }
+
+        // 中央位置を計算
+        const centerX = itemRect.x + (itemRect.width - totalWidth) / 2;
+        let currentX = centerX;
+
+        // アイコンの描画
+        if (
+            commandStyle.iconSettings &&
+            commandStyle.iconSettings.iconIndex >= 0
+        ) {
+            const iconSetting = commandStyle.iconSettings;
+            const spacing = iconSetting.spacing;
+            const iconY =
+                itemRect.y +
+                (itemRect.height -
+                    ImageManager.iconHeight * iconSetting.scale) /
+                    2;
+            this.drawIcon(
+                iconSetting.iconIndex,
+                currentX,
+                iconY,
+                iconSetting.scale,
+                iconSetting.offsetX,
+                iconSetting.offsetY
+            );
+            currentX += ImageManager.iconWidth * iconSetting.scale + spacing;
+        }
+
+        // テキストの描画
         this.drawText(
             commandName,
-            itemRect.x + 4,
+            currentX,
             itemRect.y,
-            itemRect.width - 8,
-            "center"
+            itemRect.width - (currentX - itemRect.x),
+            "left"
         );
     };
 
@@ -823,12 +1022,14 @@
         };
 
         // 枠線用の矩形を別途保持
-        const borderRect = animateBorder ? itemRect : {
-            x: rect.x + 2,
-            y: rect.y + 2,
-            width: rect.width - 4,
-            height: rect.height - 4,
-        };
+        const borderRect = animateBorder
+            ? itemRect
+            : {
+                  x: rect.x + 2,
+                  y: rect.y + 2,
+                  width: rect.width - 4,
+                  height: rect.height - 4,
+              };
 
         if (isSelected) {
             const scaleOffsetX = (itemRect.width * (animationScale - 1)) / 2;
@@ -857,14 +1058,20 @@
         this.drawRoundedRect(ctx, itemRect, radius);
 
         // グラデーションの設定
-        const gradient = this.createCommandGradient(ctx, itemRect, commandStyle);
+        const gradient = this.createCommandGradient(
+            ctx,
+            itemRect,
+            commandStyle
+        );
         ctx.fillStyle = gradient;
         ctx.fill();
 
         if (isSelected) {
             // 明るくするフィルター効果
             ctx.globalCompositeOperation = "overlay";
-            ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(_animationCount)})`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(
+                _animationCount
+            )})`;
             ctx.fill();
 
             // 光彩効果の追加
@@ -907,30 +1114,71 @@
 
         ctx.restore();
 
-        // テキストの描画
+        // アイコンとテキストの描画
         this.changeTextColor(commandStyle.textColor);
+
+        // アイコンとテキストの合計幅を計算
+        let totalWidth = this.textWidth(commandName);
+        if (
+            commandStyle.iconSettings &&
+            commandStyle.iconSettings.iconIndex >= 0
+        ) {
+            const spacing = commandStyle.iconSettings.spacing;
+            totalWidth +=
+                ImageManager.iconWidth * commandStyle.iconSettings.scale +
+                spacing;
+        }
+
+        // 中央位置を計算
+        const centerX = itemRect.x + (itemRect.width - totalWidth) / 2;
+        let currentX = centerX;
+
+        // アイコンの描画
+        if (
+            commandStyle.iconSettings &&
+            commandStyle.iconSettings.iconIndex >= 0
+        ) {
+            const iconSetting = commandStyle.iconSettings;
+            const spacing = iconSetting.spacing;
+            const iconY =
+                itemRect.y +
+                (itemRect.height -
+                    ImageManager.iconHeight * iconSetting.scale) /
+                    2;
+            this.drawIcon(
+                iconSetting.iconIndex,
+                currentX,
+                iconY,
+                iconSetting.scale,
+                iconSetting.offsetX,
+                iconSetting.offsetY
+            );
+            currentX += ImageManager.iconWidth * iconSetting.scale + spacing;
+        }
+
+        // テキストの描画
         if (isSelected) {
             this.contents.fontSize += 2;
             this.drawText(
                 commandName,
-                itemRect.x + 4,
+                currentX,
                 itemRect.y - 1,
-                itemRect.width - 8,
-                "center"
+                itemRect.width - (currentX - itemRect.x),
+                "left"
             );
             this.contents.fontSize -= 2;
         } else {
             this.drawText(
                 commandName,
-                itemRect.x + 4,
+                currentX,
                 itemRect.y - 1,
-                itemRect.width - 8,
-                "center"
+                itemRect.width - (currentX - itemRect.x),
+                "left"
             );
         }
     };
 
-    // 発光エフェクト時の描画処理を修正
+    // 発光エフェクト時の描画処理
     Window_MenuCommand.prototype.drawGlowItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
@@ -938,8 +1186,12 @@
         const commandStyle = getCommandStyle(commandName);
 
         const style = animationStyles[parameters.GlowStyle || "pulse"];
-        const glowIntensity = isSelected ? style.getGlowIntensity(_animationCount) : 0;
-        const brightness = isSelected ? style.getBrightness(_animationCount) : 0;
+        const glowIntensity = isSelected
+            ? style.getGlowIntensity(_animationCount)
+            : 0;
+        const brightness = isSelected
+            ? style.getBrightness(_animationCount)
+            : 0;
 
         const itemRect = {
             x: rect.x + 2,
@@ -958,7 +1210,11 @@
         this.drawRoundedRect(ctx, itemRect, radius);
 
         // グラデーションの設定
-        const gradient = this.createCommandGradient(ctx, itemRect, commandStyle);
+        const gradient = this.createCommandGradient(
+            ctx,
+            itemRect,
+            commandStyle
+        );
         ctx.fillStyle = gradient;
         ctx.fill();
 
@@ -977,29 +1233,66 @@
             // カスタム発光エフェクト
             if (style.getGlowGradient) {
                 ctx.globalCompositeOperation = "overlay";
-                ctx.fillStyle = style.getGlowGradient(ctx, itemRect, _animationCount);
+                ctx.fillStyle = style.getGlowGradient(
+                    ctx,
+                    itemRect,
+                    _animationCount
+                );
                 ctx.fill();
             }
         }
 
-        // 枠線の描画を最後に行う
-        if (enableBorder) {
-            ctx.globalCompositeOperation = "source-over";  // 合成モードをリセット
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = borderWidth;
-            ctx.stroke();
-        }
-
         ctx.restore();
 
-        // テキストの描画
+        // アイコンとテキストの描画
         this.changeTextColor(isSelected ? "#FFFFFF" : commandStyle.textColor);
+
+        // アイコンとテキストの合計幅を計算
+        let totalWidth = this.textWidth(commandName);
+        if (
+            commandStyle.iconSettings &&
+            commandStyle.iconSettings.iconIndex >= 0
+        ) {
+            const spacing = commandStyle.iconSettings.spacing;
+            totalWidth +=
+                ImageManager.iconWidth * commandStyle.iconSettings.scale +
+                spacing;
+        }
+
+        // 中央位置を計算
+        const centerX = itemRect.x + (itemRect.width - totalWidth) / 2;
+        let currentX = centerX;
+
+        // アイコンの描画
+        if (
+            commandStyle.iconSettings &&
+            commandStyle.iconSettings.iconIndex >= 0
+        ) {
+            const iconSetting = commandStyle.iconSettings;
+            const spacing = iconSetting.spacing;
+            const iconY =
+                itemRect.y +
+                (itemRect.height -
+                    ImageManager.iconHeight * iconSetting.scale) /
+                    2;
+            this.drawIcon(
+                iconSetting.iconIndex,
+                currentX,
+                iconY,
+                iconSetting.scale,
+                iconSetting.offsetX,
+                iconSetting.offsetY
+            );
+            currentX += ImageManager.iconWidth * iconSetting.scale + spacing;
+        }
+
+        // テキストの描画
         this.drawText(
             commandName,
-            itemRect.x + 4,
+            currentX,
             itemRect.y,
-            itemRect.width - 8,
-            "center"
+            itemRect.width - (currentX - itemRect.x),
+            "left"
         );
     };
 
@@ -1053,8 +1346,9 @@
     // プラグインパラメータの解析に追加
     const enableBorder = parameters.EnableBorder === "true";
     const borderWidth = Number(parameters.BorderWidth || 2);
-    const borderColor = parameters.BorderColor === "custom" 
-        ? parameters.CustomBorderColor 
-        : parameters.BorderColor;
+    const borderColor =
+        parameters.BorderColor === "custom"
+            ? parameters.CustomBorderColor
+            : parameters.BorderColor;
     const animateBorder = parameters.AnimateBorder === "true";
 })();
