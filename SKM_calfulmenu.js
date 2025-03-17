@@ -326,7 +326,7 @@
  * @text アイコンNo
  * @type number
  * @min -1
- * @max 255
+ * @max 999
  * @desc 表示するアイコンの番号（-1で無効）
  * @default -1
  *
