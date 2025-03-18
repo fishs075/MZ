@@ -7,6 +7,13 @@
  * @help SKM_calfulmenu.js
  *
  * ■ 更新履歴
+ * v1.0.4 (2025/03/25)
+ *   - 他プラグインとの互換性強化
+ *     - メニューコマンド並び替えプラグインとの併用時のフリーズ問題を修正
+ *     - コマンド処理とアクター選択処理の改善
+ *     - ステータスウィンドウのハンドラー設定を強化
+ *     - シーン遷移の安定性向上
+ *
  * v1.0.3 (2025/03/17)
  *   - アイコン機能の追加
  *     - 各コマンドにアイコンを設定可能
@@ -520,9 +527,31 @@
 
     // スタイル取得関数を修正
     function getCommandStyle(commandName) {
-        const customStyle = customColors.find(
+        // シンボルとコマンド名のマッピングを作成
+        const symbolMap = {
+            アイテム: "item",
+            スキル: "skill",
+            装備: "equip",
+            ステータス: "status",
+            並び替え: "formation",
+            オプション: "options",
+            セーブ: "save",
+            ロード: "load",
+            ゲーム終了: "gameEnd",
+        };
+
+        // まずcommandNameで直接検索
+        let customStyle = customColors.find(
             (style) => style.commandName === commandName
         );
+
+        // 見つからない場合はシンボルでの対応を確認
+        if (!customStyle && symbolMap[commandName]) {
+            const symbol = symbolMap[commandName];
+            customStyle = customColors.find(
+                (style) => style.commandName === symbol
+            );
+        }
 
         if (customStyle) {
             if (customStyle.colorScheme === "custom") {
@@ -812,13 +841,34 @@
     };
 
     // 描画処理を修正
+    const _Window_MenuCommand_drawItem = Window_MenuCommand.prototype.drawItem;
     Window_MenuCommand.prototype.drawItem = function (index) {
+        // 他のプラグインとの互換性のために元のcommandの情報を保持
+        const command = this._list[index];
+        if (!command) {
+            return;
+        }
+
+        // 実際の描画処理を実行
         if (isAnimationEnabled) {
             this.drawAnimatedItem(index);
         } else if (isGlowEnabled) {
             this.drawGlowItem(index);
         } else {
             this.drawStaticItem(index);
+        }
+    };
+
+    // メニューコマンド並び替えプラグインとの互換性対応
+    // 元のcallHandlerを保持し、ハンドラー実行が確実に行われるようにする
+    const _Window_MenuCommand_callHandler =
+        Window_MenuCommand.prototype.callHandler;
+    Window_MenuCommand.prototype.callHandler = function (symbol) {
+        if (this.isHandled(symbol)) {
+            _Window_MenuCommand_callHandler.call(this, symbol);
+        } else if (this.isHandled("ok")) {
+            // symbolが見つからない場合はokハンドラーを代替として使用
+            _Window_MenuCommand_callHandler.call(this, "ok");
         }
     };
 
@@ -1351,4 +1401,101 @@
             ? parameters.CustomBorderColor
             : parameters.BorderColor;
     const animateBorder = parameters.AnimateBorder === "true";
+
+    // Scene_Menuのコマンドが正しく動作するようにする
+    // 他のプラグインとの互換性対策
+    const _Scene_Menu_create = Scene_Menu.prototype.create;
+    Scene_Menu.prototype.create = function () {
+        _Scene_Menu_create.call(this);
+        // コマンドウィンドウの再設定
+        this._commandWindow.setHandler("item", this.commandItem.bind(this));
+        this._commandWindow.setHandler(
+            "skill",
+            this.commandPersonal.bind(this)
+        );
+        this._commandWindow.setHandler(
+            "equip",
+            this.commandPersonal.bind(this)
+        );
+        this._commandWindow.setHandler(
+            "status",
+            this.commandPersonal.bind(this)
+        );
+        this._commandWindow.setHandler(
+            "formation",
+            this.commandFormation.bind(this)
+        );
+        this._commandWindow.setHandler(
+            "options",
+            this.commandOptions.bind(this)
+        );
+        this._commandWindow.setHandler("save", this.commandSave.bind(this));
+        this._commandWindow.setHandler(
+            "gameEnd",
+            this.commandGameEnd.bind(this)
+        );
+
+        // ステータスウィンドウのハンドラーを設定
+        if (this._statusWindow) {
+            this._statusWindow.setHandler("ok", this.onPersonalOk.bind(this));
+            this._statusWindow.setHandler(
+                "cancel",
+                this.onPersonalCancel.bind(this)
+            );
+        }
+    };
+
+    // メニューコマンド並び替えプラグインとの互換性を強化
+    const _Scene_Menu_commandPersonal = Scene_Menu.prototype.commandPersonal;
+    Scene_Menu.prototype.commandPersonal = function () {
+        _Scene_Menu_commandPersonal.call(this);
+        // ステータスウィンドウのリフレッシュを確保
+        this._statusWindow.refresh();
+    };
+
+    // アクター選択後の遷移を上書き
+    // 他のプラグインとの競合を修正
+    Scene_Menu.prototype.onPersonalOk = function () {
+        const symbol = this._commandWindow.currentSymbol();
+        if (symbol === "skill") {
+            SceneManager.push(Scene_Skill);
+        } else if (symbol === "equip") {
+            SceneManager.push(Scene_Equip);
+        } else if (symbol === "status") {
+            SceneManager.push(Scene_Status);
+        } else {
+            // MenuCommandSortMZプラグインなどのために元の処理も呼ぶ
+            try {
+                const _onPersonalOk =
+                    Scene_Menu.prototype.constructor.prototype.onPersonalOk;
+                if (_onPersonalOk && _onPersonalOk !== this.onPersonalOk) {
+                    _onPersonalOk.call(this);
+                }
+            } catch (e) {
+                console.error("Error in onPersonalOk:", e);
+            }
+        }
+    };
+
+    // アクター選択キャンセル時の処理
+    Scene_Menu.prototype.onPersonalCancel = function () {
+        this._statusWindow.deselect();
+        this._commandWindow.activate();
+    };
+
+    // ステータスウィンドウの初期化を確保
+    const _Scene_Menu_createStatusWindow =
+        Scene_Menu.prototype.createStatusWindow;
+    Scene_Menu.prototype.createStatusWindow = function () {
+        if (!this._statusWindow) {
+            _Scene_Menu_createStatusWindow.call(this);
+        }
+        if (this._statusWindow) {
+            this._statusWindow.setHandler("ok", this.onPersonalOk.bind(this));
+            this._statusWindow.setHandler(
+                "cancel",
+                this.onPersonalCancel.bind(this)
+            );
+        }
+    };
 })();
