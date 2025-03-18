@@ -2,7 +2,7 @@
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulmenu.js)
 
-戦闘時のコマンドカスタマイズ版
+戦闘時のコマンドカスタマイズ版<br>
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulbattlecommand.js)
 
 <!-- ここに画像を入れる予定 -->
