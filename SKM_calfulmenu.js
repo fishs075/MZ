@@ -244,7 +244,7 @@
  * @text アイコン設定
  * @type struct<IconSettings>
  * @desc アイコンの設定（アイコンNo、拡大率、オフセットX、オフセットY）
- * @default {"iconIndex":-1,"scale":1.0,"offsetX":0,"offsetY":0}
+ * @default {"iconIndex":"-1","scale":"1.0","offsetX":"0","offsetY":"0","spacing":"-1"}
  *
  * @param colorScheme
  * @text 色設定
