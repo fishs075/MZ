@@ -2,6 +2,9 @@
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulmenu.js)
 
+戦闘時のコマンドカスタマイズ版
+[最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulbattlecommand.js)
+
 <!-- ここに画像を入れる予定 -->
 <img src="../images/SKM_calfulmenu1.png" width="400"><img src="../images/SKM_calfulmenu2.png" width="400">
 <img src="../images/SKM_calfulmenu3.png" width="400">
