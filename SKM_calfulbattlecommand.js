@@ -7,8 +7,9 @@
  * @help SKM_calfulbattlecommand.js
  *
  * ■ 更新履歴
- * v1.0.1 (2025/03/19)
+ * v1.0.1 （仮）(2025/03/19)
  *   - バグ修正
+ *   - アニメーションが加速していく問題に調整を施したが未だスムーズとは言えない
  * v1.0.0 (2025/03/18)
  *   - 初版リリース
  *   - バトルコマンドのカスタマイズ機能
@@ -864,6 +865,31 @@
         },
     };
 
+    // より滑らかなアニメーションのための修正
+
+    // 1. アニメーションを管理する独立した関数を追加
+    let _smoothAnimationValue = 0;
+    let _lastTimestamp = 0;
+
+    // パフォーマンスを考慮したRequestAnimationFrameを使用
+    function updateSmoothAnimation(timestamp) {
+        // 初回呼び出し時は時間差分を計算しない
+        if (_lastTimestamp === 0) {
+            _lastTimestamp = timestamp;
+        }
+
+        // 経過時間に基づいて一定速度でカウントを増加（約2秒で1サイクル）
+        const elapsed = timestamp - _lastTimestamp;
+        _smoothAnimationValue = (_smoothAnimationValue + elapsed * 0.2) % 100;
+        _lastTimestamp = timestamp;
+
+        // 次のフレームを要求
+        requestAnimationFrame(updateSmoothAnimation);
+    }
+
+    // ゲーム開始時にアニメーションを開始
+    requestAnimationFrame(updateSmoothAnimation);
+
     // 共通の描画処理関数
     function drawCommandItem(window, index, isPartyCommand) {
         const rect = window.itemLineRect(index);
@@ -1295,7 +1321,7 @@
                 );
             }
         };
-
+        /*
         // アップデート処理を拡張
         const _Window_PartyCommand_update =
             Window_PartyCommand.prototype.update;
@@ -1316,6 +1342,7 @@
                 }
             }
         };
+*/
     }
 
     // バトルクラスがロードされた後に実行する必要がある処理
@@ -1498,7 +1525,7 @@
                 );
             }
         };
-
+        /*
         // アップデート処理を拡張
         const _Window_PartyCommand_update =
             Window_PartyCommand.prototype.update;
@@ -1519,7 +1546,7 @@
                 }
             }
         };
-
+*/
         // 描画処理を修正
         Window_PartyCommand.prototype.drawItem = function (index) {
             if (isAnimationEnabled) {
@@ -1643,13 +1670,16 @@
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
 
+            // 共通のアニメーション値を使用
+            const animationTime = _smoothAnimationValue;
+
             const style =
                 animationStyles[parameters.AnimationStyle || "breath"];
             const animationScale = isSelected
-                ? style.getScale(_animationCount)
+                ? style.getScale(animationTime)
                 : 1;
             const offset = isSelected
-                ? style.getOffset(_animationCount, rect)
+                ? style.getOffset(animationTime, rect)
                 : { x: 0, y: 0 };
 
             // コマンドのスタイルを取得
@@ -1798,12 +1828,15 @@
             const isSelected = this.index() === index;
             const commandStyle = getCommandStyle(commandName, "party");
 
+            // 共通のアニメーション値を使用
+            const animationTime = _smoothAnimationValue;
+
             const style = animationStyles[parameters.GlowStyle || "pulse"];
             const glowIntensity = isSelected
-                ? style.getGlowIntensity(_animationCount)
+                ? style.getGlowIntensity(animationTime)
                 : 0;
             const brightness = isSelected
-                ? style.getBrightness(_animationCount)
+                ? style.getBrightness(animationTime)
                 : 0;
 
             const itemRect = {
@@ -2185,13 +2218,16 @@
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
 
+            // 共通のアニメーション値を使用
+            const animationTime = _smoothAnimationValue;
+
             const style =
                 animationStyles[parameters.AnimationStyle || "breath"];
             const animationScale = isSelected
-                ? style.getScale(_animationCount)
+                ? style.getScale(animationTime)
                 : 1;
             const offset = isSelected
-                ? style.getOffset(_animationCount, rect)
+                ? style.getOffset(animationTime, rect)
                 : { x: 0, y: 0 };
 
             // コマンドのスタイルを取得
@@ -2342,12 +2378,15 @@
             const isSelected = this.index() === index;
             const commandStyle = getCommandStyle(commandName, "actor");
 
+            // 共通のアニメーション値を使用
+            const animationTime = _smoothAnimationValue;
+
             const style = animationStyles[parameters.GlowStyle || "pulse"];
             const glowIntensity = isSelected
-                ? style.getGlowIntensity(_animationCount)
+                ? style.getGlowIntensity(animationTime)
                 : 0;
             const brightness = isSelected
-                ? style.getBrightness(_animationCount)
+                ? style.getBrightness(animationTime)
                 : 0;
 
             const itemRect = {
@@ -2475,6 +2514,8 @@
 
         // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
         if (this._scene instanceof Scene_Battle) {
+            // グローバル変数のリセット
+            _animationCount = 0;
             // パーティーコマンドウィンドウの拡張
             if (typeof Window_PartyCommand === "function") {
                 extendPartyCommand();
@@ -2485,12 +2526,33 @@
                 extendActorCommand();
             }
         }
-        /*
-        // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
-        if (this._scene instanceof Scene_Battle) {
-            extendBattleCommands();
+    };
+
+    const _Scene_Battle_update = Scene_Battle.prototype.update;
+    Scene_Battle.prototype.update = function () {
+        _Scene_Battle_update.call(this);
+
+        // アニメーションが有効な場合のみカウントを増加
+        if (isAnimationEnabled || isGlowEnabled) {
+            _animationCount++;
+
+            // コマンドウィンドウが表示されている場合のみ再描画
+            if (
+                this._partyCommandWindow &&
+                this._partyCommandWindow.visible &&
+                this._partyCommandWindow.active
+            ) {
+                this._partyCommandWindow.refresh();
+            }
+
+            if (
+                this._actorCommandWindow &&
+                this._actorCommandWindow.visible &&
+                this._actorCommandWindow.active
+            ) {
+                this._actorCommandWindow.refresh();
+            }
         }
-*/
     };
 
     // パッチ済みとマーク
