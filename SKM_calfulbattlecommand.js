@@ -7,9 +7,9 @@
  * @help SKM_calfulbattlecommand.js
  *
  * ■ 更新履歴
- * v1.0.1 （仮）(2025/03/19)
+ * v1.0.1 (2025/03/19)
  *   - バグ修正
- *   - アニメーションが加速していく問題に調整を施したが未だスムーズとは言えない
+ *   - アニメーションが加速していく問題に調整を施した
  * v1.0.0 (2025/03/18)
  *   - 初版リリース
  *   - バトルコマンドのカスタマイズ機能
@@ -365,7 +365,7 @@
 (() => {
     const pluginName = document.currentScript.src.match(/^.*\/(.*).js$/)[1];
     const parameters = PluginManager.parameters(pluginName);
-    let _animationCount = 0;
+    let _battleAnimationCount = 0;
     let _lastSelectedIndex = -1;
 
     // プラグインパラメータの解析
@@ -901,9 +901,11 @@
         );
 
         const style = animationStyles[parameters.AnimationStyle || "breath"];
-        const animationScale = isSelected ? style.getScale(_animationCount) : 1;
+        const animationScale = isSelected
+            ? style.getScale(_battleAnimationCount)
+            : 1;
         const offset = isSelected
-            ? style.getOffset(_animationCount, rect)
+            ? style.getOffset(_battleAnimationCount, rect)
             : { x: 0, y: 0 };
 
         const itemRect = {
@@ -942,14 +944,14 @@
             // 発光エフェクト
             ctx.globalCompositeOperation = "overlay";
             ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(
-                _animationCount
+                _battleAnimationCount
             )})`;
             ctx.fill();
 
             // 光彩効果
             ctx.globalCompositeOperation = "source-over";
             ctx.shadowColor = commandStyle.backgroundColor;
-            ctx.shadowBlur = style.getGlowIntensity(_animationCount);
+            ctx.shadowBlur = style.getGlowIntensity(_battleAnimationCount);
             ctx.stroke();
         }
 
@@ -1047,27 +1049,6 @@
         Window_ActorCommand.prototype._updateCursor = function () {
             this._cursorSprite.visible = false;
             this._cursorSprite.alpha = 0;
-        };
-
-        // アップデート処理を拡張
-        const _Window_ActorCommand_update =
-            Window_ActorCommand.prototype.update;
-        Window_ActorCommand.prototype.update = function () {
-            _Window_ActorCommand_update.call(this);
-
-            // 選択位置の変更を検知
-            if (this.index() !== this._lastSelectedIndex) {
-                this._lastSelectedIndex = this.index();
-                this.refresh();
-            }
-
-            // アニメーションまたは発光エフェクト時のみ更新
-            if (isAnimationEnabled || isGlowEnabled) {
-                _animationCount++;
-                if (_animationCount % 2 === 0) {
-                    this.refresh();
-                }
-            }
         };
 
         // リフレッシュ処理の拡張
@@ -1321,28 +1302,6 @@
                 );
             }
         };
-        /*
-        // アップデート処理を拡張
-        const _Window_PartyCommand_update =
-            Window_PartyCommand.prototype.update;
-        Window_PartyCommand.prototype.update = function () {
-            _Window_PartyCommand_update.call(this);
-
-            // 選択位置の変更を検知
-            if (this.index() !== this._lastSelectedIndex) {
-                this._lastSelectedIndex = this.index();
-                this.refresh();
-            }
-
-            // アニメーションまたは発光エフェクト時のみ更新
-            if (isAnimationEnabled || isGlowEnabled) {
-                _animationCount++;
-                if (_animationCount % 2 === 0) {
-                    this.refresh();
-                }
-            }
-        };
-*/
     }
 
     // バトルクラスがロードされた後に実行する必要がある処理
@@ -1525,12 +1484,11 @@
                 );
             }
         };
-        /*
-        // アップデート処理を拡張
-        const _Window_PartyCommand_update =
-            Window_PartyCommand.prototype.update;
+
+        // さらに、アニメーション更新は一箇所にまとめる
+        // Window_PartyCommand.prototype.update を修正
         Window_PartyCommand.prototype.update = function () {
-            _Window_PartyCommand_update.call(this);
+            Window_Command.prototype.update.call(this);
 
             // 選択位置の変更を検知
             if (this.index() !== this._lastSelectedIndex) {
@@ -1538,15 +1496,15 @@
                 this.refresh();
             }
 
-            // アニメーションまたは発光エフェクト時のみ更新
+            // その他の更新処理をここに集約
             if (isAnimationEnabled || isGlowEnabled) {
-                _animationCount++;
-                if (_animationCount % 2 === 0) {
+                // 一定間隔での更新にする
+                if (_battleAnimationCount % 2 === 0) {
                     this.refresh();
                 }
             }
         };
-*/
+
         // 描画処理を修正
         Window_PartyCommand.prototype.drawItem = function (index) {
             if (isAnimationEnabled) {
@@ -1670,16 +1628,19 @@
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
 
-            // 共通のアニメーション値を使用
-            const animationTime = _smoothAnimationValue;
+            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
+            // サイン波を使ってスムーズな周期的変化を作る
+            const t = Graphics.frameCount % 60;
+            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
+            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
 
             const style =
                 animationStyles[parameters.AnimationStyle || "breath"];
             const animationScale = isSelected
-                ? style.getScale(animationTime)
+                ? style.getScale(normalizedValue)
                 : 1;
             const offset = isSelected
-                ? style.getOffset(animationTime, rect)
+                ? style.getOffset(normalizedValue, rect)
                 : { x: 0, y: 0 };
 
             // コマンドのスタイルを取得
@@ -1744,14 +1705,14 @@
                 // 発光エフェクト
                 ctx.globalCompositeOperation = "overlay";
                 ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(
-                    _animationCount
+                    _battleAnimationCount
                 )})`;
                 ctx.fill();
 
                 // 光彩効果
                 ctx.globalCompositeOperation = "source-over";
                 ctx.shadowColor = commandStyle.backgroundColor;
-                ctx.shadowBlur = style.getGlowIntensity(_animationCount);
+                ctx.shadowBlur = style.getGlowIntensity(_battleAnimationCount);
                 ctx.stroke();
             }
 
@@ -1828,15 +1789,18 @@
             const isSelected = this.index() === index;
             const commandStyle = getCommandStyle(commandName, "party");
 
-            // 共通のアニメーション値を使用
-            const animationTime = _smoothAnimationValue;
+            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
+            // サイン波を使ってスムーズな周期的変化を作る
+            const t = Graphics.frameCount % 60;
+            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
+            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
 
             const style = animationStyles[parameters.GlowStyle || "pulse"];
             const glowIntensity = isSelected
-                ? style.getGlowIntensity(animationTime)
+                ? style.getGlowIntensity(normalizedValue)
                 : 0;
             const brightness = isSelected
-                ? style.getBrightness(animationTime)
+                ? style.getBrightness(normalizedValue)
                 : 0;
 
             const itemRect = {
@@ -1873,7 +1837,7 @@
                     ctx.fillStyle = style.getGlowGradient(
                         ctx,
                         itemRect,
-                        _animationCount
+                        _battleAnimationCount
                     );
                 } else {
                     ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
@@ -2073,11 +2037,8 @@
             }
         };
 
-        // アップデート処理を拡張
-        const _Window_ActorCommand_update =
-            Window_ActorCommand.prototype.update;
         Window_ActorCommand.prototype.update = function () {
-            _Window_ActorCommand_update.call(this);
+            Window_Command.prototype.update.call(this);
 
             // 選択位置の変更を検知
             if (this.index() !== this._lastSelectedIndex) {
@@ -2085,12 +2046,9 @@
                 this.refresh();
             }
 
-            // アニメーションまたは発光エフェクト時のみ更新
+            // アニメーションの更新はしない（PartyCommandで一元管理）
             if (isAnimationEnabled || isGlowEnabled) {
-                _animationCount++;
-                if (_animationCount % 2 === 0) {
-                    this.refresh();
-                }
+                this.refresh();
             }
         };
 
@@ -2218,16 +2176,19 @@
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
 
-            // 共通のアニメーション値を使用
-            const animationTime = _smoothAnimationValue;
+            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
+            // サイン波を使ってスムーズな周期的変化を作る
+            const t = Graphics.frameCount % 60;
+            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
+            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
 
             const style =
                 animationStyles[parameters.AnimationStyle || "breath"];
             const animationScale = isSelected
-                ? style.getScale(animationTime)
+                ? style.getScale(normalizedValue)
                 : 1;
             const offset = isSelected
-                ? style.getOffset(animationTime, rect)
+                ? style.getOffset(normalizedValue, rect)
                 : { x: 0, y: 0 };
 
             // コマンドのスタイルを取得
@@ -2292,14 +2253,14 @@
                 // 発光エフェクト
                 ctx.globalCompositeOperation = "overlay";
                 ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(
-                    _animationCount
+                    _battleAnimationCount
                 )})`;
                 ctx.fill();
 
                 // 光彩効果
                 ctx.globalCompositeOperation = "source-over";
                 ctx.shadowColor = commandStyle.backgroundColor;
-                ctx.shadowBlur = style.getGlowIntensity(_animationCount);
+                ctx.shadowBlur = style.getGlowIntensity(_battleAnimationCount);
                 ctx.stroke();
             }
 
@@ -2378,15 +2339,18 @@
             const isSelected = this.index() === index;
             const commandStyle = getCommandStyle(commandName, "actor");
 
-            // 共通のアニメーション値を使用
-            const animationTime = _smoothAnimationValue;
+            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
+            // サイン波を使ってスムーズな周期的変化を作る
+            const t = Graphics.frameCount % 60;
+            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
+            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
 
             const style = animationStyles[parameters.GlowStyle || "pulse"];
             const glowIntensity = isSelected
-                ? style.getGlowIntensity(animationTime)
+                ? style.getGlowIntensity(normalizedValue)
                 : 0;
             const brightness = isSelected
-                ? style.getBrightness(animationTime)
+                ? style.getBrightness(normalizedValue)
                 : 0;
 
             const itemRect = {
@@ -2423,7 +2387,7 @@
                     ctx.fillStyle = style.getGlowGradient(
                         ctx,
                         itemRect,
-                        _animationCount
+                        _battleAnimationCount
                     );
                 } else {
                     ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
@@ -2515,7 +2479,7 @@
         // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
         if (this._scene instanceof Scene_Battle) {
             // グローバル変数のリセット
-            _animationCount = 0;
+            _battleAnimationCount = 0;
             // パーティーコマンドウィンドウの拡張
             if (typeof Window_PartyCommand === "function") {
                 extendPartyCommand();
@@ -2534,23 +2498,27 @@
 
         // アニメーションが有効な場合のみカウントを増加
         if (isAnimationEnabled || isGlowEnabled) {
-            _animationCount++;
+            // カウンターを制御して周期的に循環させる
+            _battleAnimationCount = (_battleAnimationCount + 1) % 120; // 120フレームで一周（約2秒）
 
-            // コマンドウィンドウが表示されている場合のみ再描画
-            if (
-                this._partyCommandWindow &&
-                this._partyCommandWindow.visible &&
-                this._partyCommandWindow.active
-            ) {
-                this._partyCommandWindow.refresh();
-            }
+            // 60フレームごとに更新して負荷を軽減
+            if (_battleAnimationCount % 2 === 0) {
+                // コマンドウィンドウが表示されている場合のみ再描画
+                if (
+                    this._partyCommandWindow &&
+                    this._partyCommandWindow.visible &&
+                    this._partyCommandWindow.active
+                ) {
+                    this._partyCommandWindow.refresh();
+                }
 
-            if (
-                this._actorCommandWindow &&
-                this._actorCommandWindow.visible &&
-                this._actorCommandWindow.active
-            ) {
-                this._actorCommandWindow.refresh();
+                if (
+                    this._actorCommandWindow &&
+                    this._actorCommandWindow.visible &&
+                    this._actorCommandWindow.active
+                ) {
+                    this._actorCommandWindow.refresh();
+                }
             }
         }
     };
