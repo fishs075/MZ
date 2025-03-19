@@ -7,6 +7,8 @@
  * @help SKM_calfulbattlecommand.js
  *
  * ■ 更新履歴
+ * v1.0.1 (2025/03/19)
+ *   - バグ修正
  * v1.0.0 (2025/03/18)
  *   - 初版リリース
  *   - バトルコマンドのカスタマイズ機能
@@ -994,25 +996,6 @@
         );
     };
 
-    // バトルコマンド関連の拡張をシーン作成時に行う
-    const _SceneManager_onSceneCreate = SceneManager.onSceneCreate;
-    SceneManager.onSceneCreate = function () {
-        _SceneManager_onSceneCreate.call(this);
-
-        // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
-        if (this._scene instanceof Scene_Battle) {
-            // パーティーコマンドウィンドウの拡張
-            if (typeof Window_PartyCommand === "function") {
-                extendPartyCommand();
-            }
-
-            // アクターコマンドウィンドウの拡張
-            if (typeof Window_ActorCommand === "function") {
-                extendActorCommand();
-            }
-        }
-    };
-
     // アクターコマンドウィンドウの拡張処理を関数化
     function extendActorCommand() {
         // アクターコマンドウィンドウの初期化拡張
@@ -1020,8 +1003,8 @@
             Window_ActorCommand.prototype.initialize;
         Window_ActorCommand.prototype.initialize = function (rect) {
             _Window_ActorCommand_initialize.call(this, rect);
-            this._lastSelectedIndex = -1;
-            this.opacity = 0; // ウィンドウ背景を完全に透明に
+            this.opacity = 255; // 枠を表示するための不透明度
+            this.backOpacity = 192; // 背景を半透明に
         };
 
         // 背景を消す
@@ -1260,8 +1243,8 @@
             Window_PartyCommand.prototype.initialize;
         Window_PartyCommand.prototype.initialize = function (rect) {
             _Window_PartyCommand_initialize.call(this, rect);
-            this._lastSelectedIndex = -1;
-            this.opacity = 0; // ウィンドウ背景を完全に透明に
+            this.opacity = 255; // 枠を表示するための不透明度
+            this.backOpacity = 192; // 背景を半透明に
         };
 
         // 背景を消す
@@ -1366,26 +1349,6 @@
                 },
             };
         }
-
-        // 元の関数を保存
-        const _original_SceneManager_onSceneCreate = SceneManager.onSceneCreate;
-        SceneManager.onSceneCreate = function () {
-            // 元の関数を呼び出し
-            _original_SceneManager_onSceneCreate.call(this);
-
-            // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
-            if (this._scene instanceof Scene_Battle) {
-                // パーティーコマンドウィンドウの拡張
-                if (typeof Window_PartyCommand === "function") {
-                    extendPartyCommand();
-                }
-
-                // アクターコマンドウィンドウの拡張
-                if (typeof Window_ActorCommand === "function") {
-                    extendActorCommand();
-                }
-            }
-        };
 
         // パッチ済みとマーク
         SceneManager._onSceneCreate_patched = true;
@@ -2512,8 +2475,22 @@
 
         // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
         if (this._scene instanceof Scene_Battle) {
+            // パーティーコマンドウィンドウの拡張
+            if (typeof Window_PartyCommand === "function") {
+                extendPartyCommand();
+            }
+
+            // アクターコマンドウィンドウの拡張
+            if (typeof Window_ActorCommand === "function") {
+                extendActorCommand();
+            }
+        }
+        /*
+        // Scene_Battleが作成されたときにバトルコマンド関連の拡張を行う
+        if (this._scene instanceof Scene_Battle) {
             extendBattleCommands();
         }
+*/
     };
 
     // パッチ済みとマーク
