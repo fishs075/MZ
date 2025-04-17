@@ -496,6 +496,12 @@
                 // キラキラエフェクトの表現
                 const w = bitmap.width;
                 const h = bitmap.height;
+
+                // 現在設定されている色を取得
+                const currentColor = ctx.fillStyle;
+                // RGBAに変換（透明度は強度に応じて調整）
+                const color = this._extractRgba(currentColor, 0.8);
+
                 // ランダムな位置に小さな輝きを追加
                 for (let i = 0; i < 3; i++) {
                     const x = Math.random() * w;
@@ -504,9 +510,42 @@
                     ctx.globalCompositeOperation = "lighter";
                     ctx.beginPath();
                     ctx.arc(x, y, size, 0, Math.PI * 2, false);
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                    ctx.fillStyle = color;
                     ctx.fill();
                 }
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
         twinkle: {
@@ -530,6 +569,11 @@
                 const h = bitmap.height;
                 const pulseScale = 1 + Math.sin(count * 0.2) * 0.1;
 
+                // 現在設定されている色を取得
+                const currentColor = ctx.fillStyle;
+                // RGBAに変換（透明度は強度に応じて調整）
+                const color = this._extractRgba(currentColor, 0.8);
+
                 // スケール変化でサイズを脈動させる
                 ctx.globalCompositeOperation = "source-over";
                 const offsetX = (w * (pulseScale - 1)) / 2;
@@ -552,9 +596,42 @@
                     ctx.globalCompositeOperation = "lighter";
                     ctx.beginPath();
                     ctx.arc(x, y, size, 0, Math.PI * 2, false);
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                    ctx.fillStyle = color;
                     ctx.fill();
                 }
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
         flow: {
@@ -591,21 +668,55 @@
 
                 // 流れる発光エフェクトを適用
                 ctx.globalCompositeOperation = "lighter";
+
+                // 現在設定されている色を取得
+                const currentColor = ctx.fillStyle;
+                // RGBAに変換（透明度は強度に応じて調整）
+                const color = this._extractRgba(currentColor, 0.8);
+                const transparent = this._extractRgba(currentColor, 0);
+
                 const gradient = ctx.createLinearGradient(-w, 0, w * 2, 0);
                 const position = (count * 0.02) % 2;
 
-                gradient.addColorStop(
-                    Math.max(0, position - 0.3),
-                    "rgba(255, 255, 255, 0)"
-                );
-                gradient.addColorStop(position, "rgba(255, 255, 255, 0.8)");
-                gradient.addColorStop(
-                    Math.min(1, position + 0.3),
-                    "rgba(255, 255, 255, 0)"
-                );
+                gradient.addColorStop(Math.max(0, position - 0.3), transparent);
+                gradient.addColorStop(position, color);
+                gradient.addColorStop(Math.min(1, position + 0.3), transparent);
 
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, w, h);
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
         scan: {
@@ -622,6 +733,11 @@
                 // 元の画像の形状を保持
                 ctx.globalCompositeOperation = "source-in";
 
+                // 現在設定されている色を取得
+                const currentColor = ctx.fillStyle;
+                // RGBAに変換（透明度は強度に応じて調整）
+                const color = this._extractRgba(currentColor, intensity * 0.01);
+
                 // スキャンラインの作成
                 const scanX = ((count * 2) % (w * 2)) - w / 2; // 左から右へスキャン
                 const lineWidth = 20; // 光る線の幅
@@ -632,12 +748,45 @@
                     scanX + lineWidth,
                     0
                 );
-                gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
-                gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.8)");
-                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+                gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+                gradient.addColorStop(0.5, color);
+                gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
 
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, w, h);
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
         ripple: {
@@ -683,6 +832,19 @@
                 // 元の画像の形状を保持
                 ctx.globalCompositeOperation = "lighter";
 
+                // 現在設定されている色を取得
+                const currentColor = ctx.fillStyle;
+                // RGBAに変換（透明度は強度に応じて調整）
+                const colorBright = this._extractRgba(
+                    currentColor,
+                    intensity * 0.01
+                );
+                const colorMedium = this._extractRgba(
+                    currentColor,
+                    intensity * 0.005
+                );
+                const colorTransparent = this._extractRgba(currentColor, 0);
+
                 // 波紋エフェクトの作成
                 const phase = (count * 0.05) % 1;
                 const innerRadius = phase * maxRadius;
@@ -700,20 +862,47 @@
                     outerRadius
                 );
 
-                gradient.addColorStop(
-                    0,
-                    `rgba(255, 255, 255, ${intensity * 0.01})`
-                );
-                gradient.addColorStop(
-                    0.5,
-                    `rgba(255, 255, 255, ${intensity * 0.005})`
-                );
-                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+                gradient.addColorStop(0, colorBright);
+                gradient.addColorStop(0.5, colorMedium);
+                gradient.addColorStop(1, colorTransparent);
 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2, false);
                 ctx.fill();
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
     };
