@@ -19,7 +19,8 @@
 
 
 -   [武器・防具タイプを封印するプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/WeaponArmorTypeSeal.js)
--   [ピクチャに発光効果とアニメーションを適用するプラグイン]
+-   
+-   [ピクチャに発光効果とアニメーションを適用するプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_PictureGlow.js)
 
 
 
