@@ -1,7 +1,7 @@
 /*:
  * @target MZ
  * @plugindesc v1.4.0 ピクチャに発光効果とアニメーションを適用するプラグイン
- * @author SKM
+ * @author さかなのまえあし
  * @url
  *
  * @help
@@ -11,42 +11,45 @@
  * ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
  *
  * ピクチャに発光効果とアニメーションを適用できるプラグインです。
+ * 美しい発光エフェクトや自然な動きのアニメーションで、
+ * ゲーム画面の表現力を大幅に向上させることができます。
  *
  * 【発光エフェクト】
  * 発光スタイル：
- * - pulse: 脈動する発光効果
- * - sparkle: キラキラ光る効果
- * - flow: 流れるような発光
- * - ripple: 波紋のような発光
+ * - soft_pulse: 穏やかに脈動する発光効果。控えめな明滅で優しい印象を与えます。
+ * - pulse: 強い脈動効果。明滅の変化が大きく、サイズも変化するため目立ちます。
+ * - sparkle: きらきら光る効果。ランダムな位置に小さな輝きが現れ、星のような印象に。
+ * - twinkle: 脈動するきらきら効果。pulseとsparkleを組み合わせた派手な光り方です。
+ * - flow: 左から右へ流れるような発光効果。光の帯が横方向に流れる演出に。
+ * - scan: スキャンライン効果。左から右へ光の線が移動し、ハイテクな印象を与えます。
+ * - ripple: 中心から広がる波紋のような発光効果。水面の波紋のように広がります。
  *
  * 【アニメーションスタイル】
- * - breath: ふわふわと浮遊するアニメーション
- * - bounce: 軽やかに跳ねるアニメーション
- * - shake: 小刻みに振動するアニメーション
- * - slide: 横方向に揺れるアニメーション
- * - zigzag: ギザギザと動くアニメーション
- * - rotary: 回転するアニメーション
+ * - breath: 画像の中心を基準に、ふわふわと浮遊するようなアニメーション。
+ *   縦横にゆっくりと動き、自然な浮遊感を表現します。
+ * - bounce: 軽やかに跳ねるアニメーション。
+ *   重力に逆らって跳ね返るような動きで、軽快な印象を与えます。
+ * - shake: 小刻みに振動するアニメーション。
+ *   不規則な震えで、恐怖や不安、寒さなどの表現に最適です。
+ * - slide: 横方向に滑らかに揺れるアニメーション。
+ *   穏やかな左右の動きで、浮遊感や不安定さを表現できます。
+ * - zigzag: Z字型に動くアニメーション。
+ *   規則的な直線的動きで、機械的な動きや意図的な移動を表現します。
+ * - rotary: 画像の中心を軸として円を描くように回転するアニメーション。
+ *   画像自体は回転せず、位置だけが円運動します。
+ *
+ * 【使用方法】
+ * プラグインコマンドまたはスクリプトで簡単に設定できます。
+ * 発光効果とアニメーションは組み合わせることができます。
  *
  * 【プラグインコマンド】
  * - glowPicture: ピクチャの発光効果を設定します
- *   必須引数: pictureId, enabled
- *   オプション: style, color, intensity, opacity, speed
  *
  * - setBrightness: ピクチャの明るさを設定します
- *   必須引数: pictureId, brightness
  *
  * - animatePicture: ピクチャのアニメーションを設定します
- *   必須引数: pictureId, enabled
- *   オプション: style, power, speed
  *
  * - debug: デバッグモードの切り替え
- *   引数: enabled
- *
- *
- *  発光効果とアニメーションは組み合わせることができます
- *
- *
- *
  *
  * 【スクリプトコマンド】
  * - glowPicture(id, enabled, [style], [color], [intensity], [opacity], [speed])
@@ -54,16 +57,32 @@
  * - animatePicture(id, enabled, [style], [power], [speed])
  * - testPictureGlow(id, [enabled])
  *
+ * 【スクリプト使用例】
+ * glowPicture(1, true, "pulse", "#ff0000", 20, 150, 5);  // ピクチャ1に赤い脈動エフェクト
+ * animatePicture(1, true, "breath", 5, 5);  // ピクチャ1にふわふわ浮遊アニメーション
+ *
+ * 【組み合わせ例】
+ * - 人物立ち絵に「soft_pulse」と「breath」を組み合わせると、生命感のある自然な動きに
+ * - 重要アイテムに「sparkle」と「bounce」で注目を集める演出に
+ * - 機械的な装置に「scan」と「rotary」でSF的な印象を与える
+ * - ホラー演出に「ripple」と「shake」で不気味な雰囲気を作り出す
+ *
  * @param DefaultGlowStyle
  * @text デフォルト発光スタイル
  * @desc 発光効果のデフォルトスタイルを設定します
  * @type select
- * @option 脈動する発光
+ * @option 穏やかな脈動
+ * @value soft_pulse
+ * @option 強い脈動
  * @value pulse
- * @option キラキラ光る
+ * @option きらきら光る
  * @value sparkle
+ * @option 脈動するきらきら
+ * @value twinkle
  * @option 流れるような発光
  * @value flow
+ * @option スキャンライン
+ * @value scan
  * @option 波紋のような発光
  * @value ripple
  * @default pulse
@@ -152,12 +171,18 @@
  * @arg style
  * @text 発光スタイル
  * @type select
- * @option 脈動する発光
+ * @option 穏やかな脈動
+ * @value soft_pulse
+ * @option 強い脈動
  * @value pulse
- * @option キラキラ光る
+ * @option きらきら光る
  * @value sparkle
+ * @option 脈動するきらきら
+ * @value twinkle
  * @option 流れるような発光
  * @value flow
+ * @option スキャンライン
+ * @value scan
  * @option 波紋のような発光
  * @value ripple
  * @desc 発光効果のスタイルを選択します
@@ -310,10 +335,15 @@
                 return { x: scale, y: scale };
             },
             getOffset(count, power) {
-                return { x: 0, y: Math.sin(count * 0.1) * (power * 0.4) };
+                // より自然なふわふわ感のために縦方向の動きを強調
+                const yOffset = Math.sin(count * 0.1) * (power * 0.5);
+                // 横方向にわずかに動かして自然な揺れを表現
+                const xOffset = Math.sin(count * 0.08) * (power * 0.2);
+                return { x: xOffset, y: yOffset };
             },
             getRotation(count, power) {
-                return 0; // 回転なし
+                // 回転を削除
+                return 0;
             },
         },
         bounce: {
@@ -335,13 +365,21 @@
                 return { x: 1, y: 1 }; // スケール変化なし
             },
             getOffset(count, power) {
+                // より自然な震え方のためにランダム性を高める
+                const randomX = Math.sin(count * 0.8 + 2.5) * (power * 0.3);
+                const randomY = Math.cos(count * 1.1 + 1.3) * (power * 0.2);
+                // 別の周波数も加えてより複雑な動きに
+                const randomX2 = Math.sin(count * 1.5) * (power * 0.2);
+                const randomY2 = Math.cos(count * 1.7) * (power * 0.15);
+
                 return {
-                    x: Math.sin(count * 0.8) * (power * 0.4),
-                    y: Math.cos(count * 0.7) * (power * 0.2),
+                    x: randomX + randomX2,
+                    y: randomY + randomY2,
                 };
             },
             getRotation(count, power) {
-                return Math.sin(count * 0.6) * (power * 0.02); // 少し回転
+                // 回転は極小さくするか0に
+                return 0;
             },
         },
         slide: {
@@ -363,40 +401,50 @@
                 return { x: 1, y: 1 }; // スケール変化なし
             },
             getOffset(count, power) {
-                const baseX = Math.sin(count * 0.2) * (power * 0.8);
-                const zigX = Math.sin(count * 0.6) * (power * 0.4);
-                const zigY = Math.cos(count * 0.4) * (power * 0.6);
+                // より明確なZ字型の動きを実現
+                // 横方向は一定速度で左右に動く
+                const baseX =
+                    ((count % 60 < 30 ? count % 30 : 30 - (count % 30)) / 30) *
+                    (power * 1.2);
+
+                // 縦方向は階段状に上下する（ギザギザ感を強調）
+                const baseY = (count % 40 < 20 ? 1 : -1) * (power * 0.4);
+
                 return {
-                    x: baseX + zigX,
-                    y: zigY,
+                    x: baseX - power * 0.6, // 中心よりやや左寄りに
+                    y: baseY,
                 };
             },
             getRotation(count, power) {
-                return Math.sin(count * 0.3) * (power * 0.04); // ジグザグに合わせて少し回転
+                // 回転を削除
+                return 0;
             },
         },
         rotary: {
             getScale(count, power) {
-                const scale = 1 + Math.sin(count * 0.2) * (power * 0.01);
-                return { x: scale, y: scale };
+                // スケール変化なし
+                return { x: 1, y: 1 };
             },
             getOffset(count, power) {
-                const radius = power * 0.6;
-                const angle = count * 0.1;
+                // 円運動による回転
+                const radius = power * 0.8; // 回転半径を強度に比例
+                const angle = count * 0.1; // 一定速度で回転
                 return {
                     x: Math.cos(angle) * radius,
                     y: Math.sin(angle) * radius,
                 };
             },
             getRotation(count, power) {
-                return count * 0.05 * (power * 0.05); // 連続的に回転
+                // 画像自体は回転させない
+                return 0;
             },
         },
     };
 
     // 発光スタイルの定義
     const glowStyles = {
-        pulse: {
+        soft_pulse: {
+            // 穏やかな脈動（既存のpulseをリネーム）
             getGlowIntensity(count, intensity) {
                 return intensity * (0.7 + 0.3 * Math.sin(count * 0.05));
             },
@@ -407,25 +455,99 @@
                 // パルス効果の追加処理（必要に応じて）
             },
         },
+        pulse: {
+            // 強い脈動（カラフルメニュー風）
+            getGlowIntensity(count, intensity) {
+                return intensity * (0.5 + Math.sin(count * 0.2)); // 変化幅を大きく
+            },
+            getBrightness(count) {
+                const pulseWave = Math.sin(count * 0.2);
+                return 0.2 + Math.max(0, pulseWave) * 0.6; // より明確な明るさの変化
+            },
+            applyEffect(ctx, bitmap, count, intensity) {
+                // スケール変化でサイズを脈動させる
+                const scale = 1 + Math.sin(count * 0.2) * 0.1;
+                const w = bitmap.width;
+                const h = bitmap.height;
+                const offsetX = (w * (scale - 1)) / 2;
+                const offsetY = (h * (scale - 1)) / 2;
+
+                ctx.globalCompositeOperation = "source-over";
+                ctx.drawImage(
+                    bitmap.canvas,
+                    -offsetX,
+                    -offsetY,
+                    w * scale,
+                    h * scale
+                );
+            },
+        },
         sparkle: {
             getGlowIntensity(count, intensity) {
-                const base = intensity * 0.7;
-                const sparkle = intensity * 0.3 * Math.random();
+                // きらきらエフェクトはランダムな強度変化のみ
+                const base = intensity * 0.8;
+                const sparkle = intensity * 0.2 * Math.random();
                 return base + sparkle;
             },
             getBrightness(count) {
-                return 1.0 + 0.3 * Math.random();
+                return 1.0 + 0.2 * Math.random();
             },
             applyEffect(ctx, bitmap, count, intensity) {
                 // キラキラエフェクトの表現
                 const w = bitmap.width;
                 const h = bitmap.height;
-
                 // ランダムな位置に小さな輝きを追加
                 for (let i = 0; i < 3; i++) {
                     const x = Math.random() * w;
                     const y = Math.random() * h;
                     const size = 2 + Math.random() * (intensity * 0.2);
+                    ctx.globalCompositeOperation = "lighter";
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2, false);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                    ctx.fill();
+                }
+            },
+        },
+        twinkle: {
+            // 脈動するきらきら
+            getGlowIntensity(count, intensity) {
+                // カラフルメニューの強い脈動ベース
+                const pulseIntensity =
+                    intensity * (0.5 + Math.sin(count * 0.2));
+                // きらきらエフェクト
+                const sparkleBase = Math.sin(count * 0.5) * (intensity * 0.2);
+                const sparkleRandom = Math.random() * (intensity * 0.1);
+                return pulseIntensity + sparkleBase + sparkleRandom;
+            },
+            getBrightness(count) {
+                const pulseWave = Math.sin(count * 0.2);
+                return 0.2 + Math.max(0, pulseWave) * 0.6 + Math.random() * 0.2;
+            },
+            applyEffect(ctx, bitmap, count, intensity) {
+                // キラキラエフェクトの表現
+                const w = bitmap.width;
+                const h = bitmap.height;
+                const pulseScale = 1 + Math.sin(count * 0.2) * 0.1;
+
+                // スケール変化でサイズを脈動させる
+                ctx.globalCompositeOperation = "source-over";
+                const offsetX = (w * (pulseScale - 1)) / 2;
+                const offsetY = (h * (pulseScale - 1)) / 2;
+                ctx.drawImage(
+                    bitmap.canvas,
+                    -offsetX,
+                    -offsetY,
+                    w * pulseScale,
+                    h * pulseScale
+                );
+
+                // きらきらエフェクトを追加
+                for (let i = 0; i < 4; i++) {
+                    const x = Math.random() * w;
+                    const y = Math.random() * h;
+                    const size =
+                        (2 + Math.random() * (intensity * 0.2)) * pulseScale;
 
                     ctx.globalCompositeOperation = "lighter";
                     ctx.beginPath();
@@ -443,22 +565,79 @@
                 return 1.0;
             },
             getGlowGradient(ctx, rect, count, color) {
-                const gradient = ctx.createLinearGradient(0, 0, rect.width, 0);
-                const offset = (count * 0.01) % 2;
-
-                gradient.addColorStop(
-                    Math.max(0, offset - 1),
-                    "rgba(0, 0, 0, 0)"
+                const gradient = ctx.createLinearGradient(
+                    rect.x - rect.width,
+                    rect.y,
+                    rect.x + rect.width * 2,
+                    rect.y
                 );
-                gradient.addColorStop(Math.max(0, offset - 0.5), color);
-                gradient.addColorStop(Math.min(1, offset), "rgba(0, 0, 0, 0)");
-                gradient.addColorStop(Math.min(1, offset + 0.5), color);
+
+                const position = (count % 100) / 100;
                 gradient.addColorStop(
-                    Math.min(1, offset + 1),
-                    "rgba(0, 0, 0, 0)"
+                    Math.max(0, position - 0.3),
+                    "rgba(0, 0, 0, 0.2)"
+                );
+                gradient.addColorStop(position, color);
+                gradient.addColorStop(
+                    Math.min(1, position + 0.3),
+                    "rgba(0, 0, 0, 0.2)"
                 );
 
                 return gradient;
+            },
+            applyEffect(ctx, bitmap, count, intensity) {
+                const w = bitmap.width;
+                const h = bitmap.height;
+
+                // 流れる発光エフェクトを適用
+                ctx.globalCompositeOperation = "lighter";
+                const gradient = ctx.createLinearGradient(-w, 0, w * 2, 0);
+                const position = (count * 0.02) % 2;
+
+                gradient.addColorStop(
+                    Math.max(0, position - 0.3),
+                    "rgba(255, 255, 255, 0)"
+                );
+                gradient.addColorStop(position, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(
+                    Math.min(1, position + 0.3),
+                    "rgba(255, 255, 255, 0)"
+                );
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, w, h);
+            },
+        },
+        scan: {
+            getGlowIntensity(count, intensity) {
+                return intensity;
+            },
+            getBrightness(count) {
+                return 1.0;
+            },
+            applyEffect(ctx, bitmap, count, intensity) {
+                const w = bitmap.width;
+                const h = bitmap.height;
+
+                // 元の画像の形状を保持
+                ctx.globalCompositeOperation = "source-in";
+
+                // スキャンラインの作成
+                const scanX = ((count * 2) % (w * 2)) - w / 2; // 左から右へスキャン
+                const lineWidth = 20; // 光る線の幅
+
+                const gradient = ctx.createLinearGradient(
+                    scanX - lineWidth,
+                    0,
+                    scanX + lineWidth,
+                    0
+                );
+                gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+                gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, w, h);
             },
         },
         ripple: {
@@ -493,6 +672,48 @@
                 gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
 
                 return gradient;
+            },
+            applyEffect(ctx, bitmap, count, intensity) {
+                const w = bitmap.width;
+                const h = bitmap.height;
+                const centerX = w / 2;
+                const centerY = h / 2;
+                const maxRadius = Math.max(w, h) * 0.75;
+
+                // 元の画像の形状を保持
+                ctx.globalCompositeOperation = "lighter";
+
+                // 波紋エフェクトの作成
+                const phase = (count * 0.05) % 1;
+                const innerRadius = phase * maxRadius;
+                const outerRadius = Math.min(
+                    maxRadius,
+                    innerRadius + maxRadius * 0.2
+                );
+
+                const gradient = ctx.createRadialGradient(
+                    centerX,
+                    centerY,
+                    innerRadius,
+                    centerX,
+                    centerY,
+                    outerRadius
+                );
+
+                gradient.addColorStop(
+                    0,
+                    `rgba(255, 255, 255, ${intensity * 0.01})`
+                );
+                gradient.addColorStop(
+                    0.5,
+                    `rgba(255, 255, 255, ${intensity * 0.005})`
+                );
+                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2, false);
+                ctx.fill();
             },
         },
     };
@@ -767,6 +988,9 @@
         this._originalY = 0;
         this._originalRotation = 0;
         this._animationCount = 0;
+
+        // アンカーポイントは初期状態のままにする（デフォルトでは左上）
+
         debugLog(`Sprite_Picture#${pictureId}初期化`);
     };
 
@@ -783,7 +1007,14 @@
         const picture = this.picture();
         if (!picture || !picture._animationEnabled) {
             // アニメーションが無効の場合は元の状態に戻す
-            if (this.rotation !== this._originalRotation) {
+            if (
+                this.scale.x !== 1 ||
+                this.scale.y !== 1 ||
+                this.x !== this._originalX ||
+                this.y !== this._originalY
+            ) {
+                this.scale.x = 1;
+                this.scale.y = 1;
                 this.x = this._originalX;
                 this.y = this._originalY;
                 this.rotation = this._originalRotation;
@@ -798,7 +1029,7 @@
             this._originalRotation = this.rotation;
         }
 
-        // アニメーションカウンタを更新
+        // アニメーションカウントを更新
         this._animationCount += picture._animationSpeed * 0.1;
 
         // アニメーションスタイルの取得
@@ -824,10 +1055,21 @@
             picture._animationPower
         );
 
+        // スケールの適用
         this.scale.x = scale.x;
         this.scale.y = scale.y;
-        this.x = this._originalX + offset.x;
-        this.y = this._originalY + offset.y;
+
+        // 画像の中心を基準に拡大縮小するために位置を調整
+        const width = this.width / scale.x;
+        const height = this.height / scale.y;
+        const centerOffsetX = (scale.x - 1) * (width / 2);
+        const centerOffsetY = (scale.y - 1) * (height / 2);
+
+        // オフセットの適用
+        this.x = this._originalX + offset.x - centerOffsetX;
+        this.y = this._originalY + offset.y - centerOffsetY;
+
+        // 回転の適用
         this.rotation = this._originalRotation + rotation;
     };
 
