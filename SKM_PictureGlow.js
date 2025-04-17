@@ -353,7 +353,8 @@
                 return { x: 1 + bounce, y: 1 + bounce };
             },
             getOffset(count, power) {
-                const bounce = Math.abs(Math.sin(count * 0.15)) * (power * 1.6);
+                // より強いバウンス効果（数字を大きくした）
+                const bounce = Math.abs(Math.sin(count * 0.15)) * (power * 4.0);
                 return { x: 0, y: -bounce };
             },
             getRotation(count, power) {
@@ -1133,6 +1134,7 @@
         this._animationStyle = defaultAnimationStyle;
         this._animationPower = defaultAnimationPower;
         this._animationSpeed = animationSpeed;
+        this._animationCount = 0; // 各ピクチャ固有のアニメーションカウンター
 
         this._needsUpdate = true;
         debugLog("Game_Picture初期化", this);
@@ -1220,15 +1222,15 @@
                 ctx.filter = "none";
             }
 
-            // アニメーションカウントの更新
-            _animationCount += picture._glowSpeed * 0.1;
+            // アニメーションカウントの更新（各ピクチャ固有のカウンターを更新）
+            picture._animationCount += picture._glowSpeed * 0.1;
 
-            // 発光スタイル特有のエフェクトを適用
+            // 発光スタイル特有のエフェクトを適用（各ピクチャ固有のカウンターを利用）
             if (style.applyEffect) {
                 style.applyEffect(
                     ctx,
                     effectBitmap,
-                    _animationCount,
+                    picture._animationCount,
                     picture._glowIntensity,
                     picture
                 );
@@ -1382,7 +1384,8 @@
         this._originalX = undefined; // updateで実際の座標を設定するため、未定義に
         this._originalY = undefined;
         this._originalRotation = 0;
-        this._animationCount = 0;
+
+        // this._animationCount = 0; // ピクチャごとに固有カウンターはGame_Pictureに移動
 
         debugLog(`Sprite_Picture#${pictureId}初期化`);
     };
@@ -1393,12 +1396,22 @@
         // 元の更新処理を実行
         _Sprite_Picture_update.call(this);
 
-        // 現在の位置を保持（アニメーション用の基準位置として使用）
-        if (this._originalX === undefined || this._originalY === undefined) {
+        // 元々存在していたピクチャのみ処理（マップのロード時などに対応）
+        if (!this.picture()) {
+            return;
+        }
+
+        // 初期化が必要な場合
+        if (!this._glowInitialized) {
+            this._glowInitialized = true;
+            // this._animationCount = 0; // ピクチャごとにアニメーションカウンターを持つ
+
+            // 元の状態を保存
+            this._originalScaleX = this.scale.x;
+            this._originalScaleY = this.scale.y;
             this._originalX = this.x;
             this._originalY = this.y;
             this._originalRotation = this.rotation || 0;
-            this._animationCount = 0;
         }
 
         // 発光効果とアニメーションの更新
@@ -1406,56 +1419,61 @@
         this.updateAnimation();
     };
 
-    // アニメーション処理を追加
+    // 画像の中心を基準にしたアニメーション処理
     Sprite_Picture.prototype.updateAnimation = function () {
         const picture = this.picture();
         if (!picture || !picture._animationEnabled) {
-            // アニメーションが無効の場合は元の位置に戻すだけで、スケールや座標は変更しない
             return;
         }
 
-        // 初回のみ元の座標を保存
-        if (this._animationCount === 0) {
-            this._originalX = this.x;
-            this._originalY = this.y;
-            this._originalRotation = this.rotation;
-        }
-
-        // アニメーションカウントを更新
-        this._animationCount += picture._animationSpeed * 0.1;
+        // アニメーションカウントを更新（ピクチャごとに個別に管理）
+        picture._animationCount += picture._animationSpeed * 0.1;
 
         // アニメーションスタイルの取得
         const style = animationStyles[picture._animationStyle];
         if (!style) {
             console.error(
-                `[SKM_PictureGlow] 不明なアニメーションスタイル: ${picture._animationStyle}`
+                `不明なアニメーションスタイル: ${picture._animationStyle}`
             );
             return;
         }
 
-        // スケール、オフセット、回転を適用
+        // 元のビットマップのサイズを取得
+        const originalWidth = this.bitmap
+            ? this.bitmap.width * this._originalScaleX
+            : this.width || 0;
+        const originalHeight = this.bitmap
+            ? this.bitmap.height * this._originalScaleY
+            : this.height || 0;
+
+        // スケール、オフセット、回転を取得
         const scale = style.getScale(
-            this._animationCount,
+            picture._animationCount,
             picture._animationPower
         );
         const offset = style.getOffset(
-            this._animationCount,
+            picture._animationCount,
             picture._animationPower
         );
         const rotation = style.getRotation(
-            this._animationCount,
+            picture._animationCount,
             picture._animationPower
         );
 
-        // スケールの適用（単純にスケールを変更）
-        this.scale.x = scale.x;
-        this.scale.y = scale.y;
+        // 中心を基準にした計算方法
+        // 1. スケール変更による位置調整を計算
+        const scaleOffsetX = (originalWidth * (scale.x - 1)) / 2;
+        const scaleOffsetY = (originalHeight * (scale.y - 1)) / 2;
 
-        // オフセットの適用（元の位置にオフセットを追加）
-        this.x = this._originalX + offset.x;
-        this.y = this._originalY + offset.y;
+        // 2. スケールを適用
+        this.scale.x = this._originalScaleX * scale.x;
+        this.scale.y = this._originalScaleY * scale.y;
 
-        // 回転の適用
+        // 3. 位置を計算（元の座標 + スケールによるオフセット + アニメーションオフセット）
+        this.x = this._originalX - scaleOffsetX + offset.x;
+        this.y = this._originalY - scaleOffsetY + offset.y;
+
+        // 4. 回転を適用
         this.rotation = this._originalRotation + rotation;
     };
 
