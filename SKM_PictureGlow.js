@@ -451,8 +451,48 @@
             getBrightness(count) {
                 return 1.0 + 0.2 * Math.sin(count * 0.05);
             },
-            applyEffect(ctx, bitmap, count, intensity) {
-                // パルス効果の追加処理（必要に応じて）
+            applyEffect(ctx, bitmap, count, intensity, picture) {
+                // パルス効果の処理（必要に応じて）
+                // 現在設定されている色を取得して_extractRgba関数で処理可能に
+                const currentColor = ctx.fillStyle;
+                // RGBAに変換
+                const alpha = 0.5 * (0.7 + 0.3 * Math.sin(count * 0.05));
+                const color = this._extractRgba(currentColor, alpha);
+
+                // 必要に応じて追加処理
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
         pulse: {
@@ -464,13 +504,16 @@
                 const pulseWave = Math.sin(count * 0.2);
                 return 0.2 + Math.max(0, pulseWave) * 0.6; // より明確な明るさの変化
             },
-            applyEffect(ctx, bitmap, count, intensity) {
+            applyEffect(ctx, bitmap, count, intensity, picture) {
                 // スケール変化でサイズを脈動させる
                 const scale = 1 + Math.sin(count * 0.2) * 0.1;
                 const w = bitmap.width;
                 const h = bitmap.height;
                 const offsetX = (w * (scale - 1)) / 2;
                 const offsetY = (h * (scale - 1)) / 2;
+
+                // 現在設定されている色を取得
+                const currentColor = ctx.fillStyle;
 
                 ctx.globalCompositeOperation = "source-over";
                 ctx.drawImage(
@@ -480,6 +523,39 @@
                     w * scale,
                     h * scale
                 );
+            },
+
+            // 色をRGBA形式に変換するヘルパーメソッド
+            _extractRgba(color, alpha = 1.0) {
+                // #RRGGBBまたは#RRGGBBAA形式の場合
+                if (typeof color === "string" && color.startsWith("#")) {
+                    const r = parseInt(color.substr(1, 2), 16);
+                    const g = parseInt(color.substr(3, 2), 16);
+                    const b = parseInt(color.substr(5, 2), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // rgba形式の場合はそのまま利用（透明度だけ調整）
+                else if (
+                    typeof color === "string" &&
+                    color.startsWith("rgba")
+                ) {
+                    const parts = color.match(
+                        /rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d*(?:\.\d+)?)\)/
+                    );
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+                // rgb形式の場合は透明度を追加
+                else if (typeof color === "string" && color.startsWith("rgb")) {
+                    const parts = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (parts) {
+                        return `rgba(${parts[1]}, ${parts[2]}, ${parts[3]}, ${alpha})`;
+                    }
+                }
+
+                // デフォルト値（色が解析できない場合は白を使用）
+                return `rgba(255, 255, 255, ${alpha})`;
             },
         },
         sparkle: {
@@ -492,7 +568,7 @@
             getBrightness(count) {
                 return 1.0 + 0.2 * Math.random();
             },
-            applyEffect(ctx, bitmap, count, intensity) {
+            applyEffect(ctx, bitmap, count, intensity, picture) {
                 // キラキラエフェクトの表現
                 const w = bitmap.width;
                 const h = bitmap.height;
@@ -511,6 +587,51 @@
                     ctx.beginPath();
                     ctx.arc(x, y, size, 0, Math.PI * 2, false);
                     ctx.fillStyle = color;
+                    ctx.fill();
+                }
+
+                // 下から上に登っていくキラキラを追加（カラフルメニューと同様の動き）
+                ctx.globalCompositeOperation = "lighter";
+                for (let i = 0; i < 8; i++) {
+                    // 複数の正弦波を組み合わせてきらきら感を出す
+                    const sparkle1 = Math.sin(count * 0.5 + i) * 0.3;
+                    const sparkle2 = Math.sin((count + i * 2) * 0.7) * 0.3;
+
+                    // 横位置はランダムだが一定の範囲内に
+                    const x =
+                        w * 0.2 + (Math.sin(count * 0.1 + i) + 1) * (w * 0.3);
+
+                    // 下から上へ移動する基本的な動き
+                    const ySpeed = 1.5 + (i % 3) * 0.6; // 異なる速度で上昇
+                    const baseY = h - ((count * ySpeed + i * 60) % (h * 1.2));
+
+                    // 横方向にも少し揺れる
+                    const y = baseY + Math.sin(count * 0.2 + i * 0.8) * 10;
+
+                    // サイズは強度とランダム性に基づく
+                    const sizeBase = 2 + intensity * 0.1;
+                    const size =
+                        sizeBase *
+                        (1 + sparkle1 + sparkle2 + Math.random() * 0.5);
+
+                    // 透明度は位置と時間に応じて変化（大幅に上げる）
+                    const alphaBase = 0.95 + sparkle1 + sparkle2;
+                    // 下部と上部で薄くなるよう調整
+                    const yFactor = 1 - Math.abs((y - h * 0.5) / (h * 0.7));
+                    const alpha = alphaBase * Math.max(0.3, yFactor);
+
+                    const sparkleColor = this._extractRgba(currentColor, alpha);
+
+                    // 輝きを強くする
+                    ctx.fillStyle = sparkleColor;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2, false);
+                    ctx.fill();
+
+                    // 二重に描画してさらに強調
+                    ctx.globalCompositeOperation = "screen";
+                    ctx.beginPath();
+                    ctx.arc(x, y, size * 0.7, 0, Math.PI * 2, false);
                     ctx.fill();
                 }
             },
@@ -563,7 +684,7 @@
                 const pulseWave = Math.sin(count * 0.2);
                 return 0.2 + Math.max(0, pulseWave) * 0.6 + Math.random() * 0.2;
             },
-            applyEffect(ctx, bitmap, count, intensity) {
+            applyEffect(ctx, bitmap, count, intensity, picture) {
                 // キラキラエフェクトの表現
                 const w = bitmap.width;
                 const h = bitmap.height;
@@ -587,16 +708,98 @@
                 );
 
                 // きらきらエフェクトを追加
+                ctx.globalCompositeOperation = "lighter";
                 for (let i = 0; i < 4; i++) {
                     const x = Math.random() * w;
                     const y = Math.random() * h;
                     const size =
                         (2 + Math.random() * (intensity * 0.2)) * pulseScale;
 
-                    ctx.globalCompositeOperation = "lighter";
                     ctx.beginPath();
                     ctx.arc(x, y, size, 0, Math.PI * 2, false);
                     ctx.fillStyle = color;
+                    ctx.fill();
+                }
+
+                // 下から上に登っていくキラキラを追加（脈動要素を加えた改良版）
+                const pulseWave = Math.sin(count * 0.2);
+                const pulseIntensity = 0.5 + Math.max(0, pulseWave) * 0.5;
+
+                // 色をより明確にするために描画順を調整
+                ctx.globalCompositeOperation = "lighter";
+
+                for (let i = 0; i < 10; i++) {
+                    // 脈動と連動した効果
+                    const sparklePhase = count * 0.1 + i * 0.5;
+                    const sparkle1 =
+                        Math.sin(sparklePhase) * 0.4 * pulseIntensity;
+                    const sparkle2 =
+                        Math.cos(sparklePhase * 1.3) * 0.3 * pulseIntensity;
+
+                    // 横位置はランダムだが一定の範囲内に
+                    const xRatio = (i % 5) / 5; // 画面幅に均等に分布
+                    const x =
+                        w * (0.1 + xRatio * 0.8) +
+                        Math.sin(count * 0.2 + i) * 20;
+
+                    // 下から上へ移動する基本的な動き（脈動と連動）
+                    const ySpeed =
+                        (2 + (i % 4) * 0.8) * (0.8 + pulseIntensity * 0.4);
+                    const yOffset = h * 1.5 * (i / 10); // 各キラキラの初期位置をずらす
+                    const baseY = h - ((count * ySpeed + yOffset) % (h * 1.5));
+
+                    // 横方向にも揺れる（脈動と連動）
+                    const waveAmplitude = 15 * pulseIntensity;
+                    const y =
+                        baseY + Math.sin(count * 0.1 + i * 0.7) * waveAmplitude;
+
+                    // サイズも脈動と連動（より大きく）
+                    const sizeBase = (3 + intensity * 0.2) * pulseScale;
+                    const size =
+                        sizeBase *
+                        (1 + sparkle1 + sparkle2 + Math.random() * 0.3);
+
+                    // 透明度も脈動と連動（大幅に上げる）
+                    const alphaBase = 0.95 * pulseIntensity;
+                    // 下部と上部で薄くなるよう調整
+                    const yFactor = 1 - Math.abs((y - h * 0.5) / (h * 0.7));
+                    const alpha = alphaBase * Math.max(0.3, yFactor);
+
+                    const sparkleColor = this._extractRgba(currentColor, alpha);
+
+                    // メインの円を描画
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2, false);
+                    ctx.fillStyle = sparkleColor;
+                    ctx.fill();
+
+                    // ハイライト効果を追加（二重の円でより鮮明に）
+                    ctx.globalCompositeOperation = "screen";
+                    ctx.beginPath();
+                    ctx.arc(x, y, size * 0.7, 0, Math.PI * 2, false);
+                    ctx.fillStyle = sparkleColor;
+                    ctx.fill();
+
+                    // アウターグローを追加
+                    ctx.globalCompositeOperation = "lighter";
+                    const glowSize = size * 1.5;
+                    const glowGradient = ctx.createRadialGradient(
+                        x,
+                        y,
+                        size * 0.5,
+                        x,
+                        y,
+                        glowSize
+                    );
+                    glowGradient.addColorStop(0, sparkleColor);
+                    glowGradient.addColorStop(
+                        1,
+                        this._extractRgba(currentColor, 0)
+                    );
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, glowSize, 0, Math.PI * 2, false);
+                    ctx.fillStyle = glowGradient;
                     ctx.fill();
                 }
             },
@@ -662,7 +865,7 @@
 
                 return gradient;
             },
-            applyEffect(ctx, bitmap, count, intensity) {
+            applyEffect(ctx, bitmap, count, intensity, picture) {
                 const w = bitmap.width;
                 const h = bitmap.height;
 
@@ -726,7 +929,7 @@
             getBrightness(count) {
                 return 1.0;
             },
-            applyEffect(ctx, bitmap, count, intensity) {
+            applyEffect(ctx, bitmap, count, intensity, picture) {
                 const w = bitmap.width;
                 const h = bitmap.height;
 
@@ -822,7 +1025,7 @@
 
                 return gradient;
             },
-            applyEffect(ctx, bitmap, count, intensity) {
+            applyEffect(ctx, bitmap, count, intensity, picture) {
                 const w = bitmap.width;
                 const h = bitmap.height;
                 const centerX = w / 2;
@@ -1026,7 +1229,8 @@
                     ctx,
                     effectBitmap,
                     _animationCount,
-                    picture._glowIntensity
+                    picture._glowIntensity,
+                    picture
                 );
             }
 
