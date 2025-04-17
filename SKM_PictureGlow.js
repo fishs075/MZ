@@ -984,12 +984,12 @@
         this._glowEffect = null;
         this._glowDirty = false;
         this._pictureId = pictureId;
-        this._originalX = 0;
-        this._originalY = 0;
+
+        // アニメーション用の変数を初期化
+        this._originalX = undefined; // updateで実際の座標を設定するため、未定義に
+        this._originalY = undefined;
         this._originalRotation = 0;
         this._animationCount = 0;
-
-        // アンカーポイントは初期状態のままにする（デフォルトでは左上）
 
         debugLog(`Sprite_Picture#${pictureId}初期化`);
     };
@@ -997,7 +997,18 @@
     // Sprite_Pictureのupdateを拡張
     const _Sprite_Picture_update = Sprite_Picture.prototype.update;
     Sprite_Picture.prototype.update = function () {
+        // 元の更新処理を実行
         _Sprite_Picture_update.call(this);
+
+        // 現在の位置を保持（アニメーション用の基準位置として使用）
+        if (this._originalX === undefined || this._originalY === undefined) {
+            this._originalX = this.x;
+            this._originalY = this.y;
+            this._originalRotation = this.rotation || 0;
+            this._animationCount = 0;
+        }
+
+        // 発光効果とアニメーションの更新
         this.updateGlowEffect();
         this.updateAnimation();
     };
@@ -1006,19 +1017,7 @@
     Sprite_Picture.prototype.updateAnimation = function () {
         const picture = this.picture();
         if (!picture || !picture._animationEnabled) {
-            // アニメーションが無効の場合は元の状態に戻す
-            if (
-                this.scale.x !== 1 ||
-                this.scale.y !== 1 ||
-                this.x !== this._originalX ||
-                this.y !== this._originalY
-            ) {
-                this.scale.x = 1;
-                this.scale.y = 1;
-                this.x = this._originalX;
-                this.y = this._originalY;
-                this.rotation = this._originalRotation;
-            }
+            // アニメーションが無効の場合は元の位置に戻すだけで、スケールや座標は変更しない
             return;
         }
 
@@ -1055,19 +1054,13 @@
             picture._animationPower
         );
 
-        // スケールの適用
+        // スケールの適用（単純にスケールを変更）
         this.scale.x = scale.x;
         this.scale.y = scale.y;
 
-        // 画像の中心を基準に拡大縮小するために位置を調整
-        const width = this.width / scale.x;
-        const height = this.height / scale.y;
-        const centerOffsetX = (scale.x - 1) * (width / 2);
-        const centerOffsetY = (scale.y - 1) * (height / 2);
-
-        // オフセットの適用
-        this.x = this._originalX + offset.x - centerOffsetX;
-        this.y = this._originalY + offset.y - centerOffsetY;
+        // オフセットの適用（元の位置にオフセットを追加）
+        this.x = this._originalX + offset.x;
+        this.y = this._originalY + offset.y;
 
         // 回転の適用
         this.rotation = this._originalRotation + rotation;
