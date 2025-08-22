@@ -6,6 +6,11 @@ RPG Maker MZ用のプラグインで、メニューシーンに統一された�
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-Free-brightgreen)
 
+## DL リンク
+
+[ダウンロード先](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuScenesResize.js)
+
+
 ## 📋 機能概要
 
 このプラグインは、以下のメニューシーンに統一されたメニューバーを表示し、より直感的なUI体験を提供します：
@@ -130,7 +135,7 @@ RPG Maker MZ用のプラグインで、メニューシーンに統一された�
 
 バグ報告や機能要望は、以下の方法でお知らせください：
 
-- **GitHub Issues**: [Issues ページ](../../issues)
+- **GitHub Issues**
 
 ## 🙏 謝辞
 
