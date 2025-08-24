@@ -4,11 +4,11 @@
 
 /*:
  * @target MZ
- * @plugindesc メニューシーン画面サイズ調整統合プラグイン v1.0.0
+ * @plugindesc メニューシーン画面サイズ調整統合プラグイン v1.4.0
  * @author YourName
  * @url
  * @help MenuScenesResize.js
- * @version 1.0.0
+ * @version 1.4.0
  *
  * アイテム、スキル、装備、ステータス、セーブシーンでメニューバーの幅分だけ
  * 画面サイズを調整し、空いた箇所に反応しないメニューバーを表示します。
@@ -43,6 +43,13 @@
  * @type boolean
  * @default true
  *
+ * @param menuBarHeight
+ * @text メニューバー高さ（共通）
+ * @desc 全シーン共通のメニューバー総高さ（px）。0で自動（従来動作）
+ * @type number
+ * @min 0
+ * @default 0
+ *
  * @param menuBarWidth
  * @text メニューバー幅
  * @desc メニューバーの幅（ピクセル）
@@ -74,6 +81,14 @@
  * @min 0
  * @max 255
  * @default 160
+ *
+ * @param showGoldBar
+ * @text ゴールドバー表示
+ * @desc メニューバー内の所持金（ゴールド）ウィンドウを表示する
+ * @type boolean
+ * @default true
+ *
+
  *
  * @help
  * 
@@ -113,6 +128,8 @@
     const menuBarPosition = parameters['menuBarPosition'] || 'left';
     const showMenuBarBackground = parameters['showMenuBarBackground'] === 'true';
     const menuBarOpacity = Number(parameters['menuBarOpacity'] || 160);
+    const showGoldBar = parameters['showGoldBar'] === 'true';
+    const menuBarHeight = Number(parameters['menuBarHeight'] || 0);
 
     //=============================================================================
     // 共通メソッド
@@ -142,14 +159,17 @@
 
     // メニューゴールドウィンドウを作成する共通メソッド
     function createMenuGoldWindow(scene) {
+        if (!showGoldBar) return;
         const rect = scene.menuGoldWindowRect();
         scene._goldWindow = new Window_Gold(rect);
-        
-        // 透明度設定（枠線は表示したまま）
         scene._goldWindow.contentsOpacity = menuBarOpacity;
-        scene._goldWindow.opacity = 255; // 枠線は完全に表示
-        
+        scene._goldWindow.opacity = 255;
         scene.addWindow(scene._goldWindow);
+    }
+
+    // 指定シーンのメニューバー総高さ（コマンド＋所持金）を取得
+    function getConfiguredMenuBarHeight(scene) {
+        return menuBarHeight > 0 ? menuBarHeight : 0;
     }
 
     // メニューコマンドウィンドウの矩形を取得する共通メソッド
@@ -157,32 +177,31 @@
         const x = menuBarPosition === 'left' ? 0 : Graphics.boxWidth - menuBarWidth;
         const y = scene.mainAreaTop();
         const width = menuBarWidth;
-        const goldHeight = scene.calcWindowHeight(1, true);
-        
-        let totalHeight;
+        const goldHeight = showGoldBar ? scene.calcWindowHeight(1, true) : 0;
+        let availableTotalHeight;
         if (scene.constructor === Scene_Status || scene.constructor === Scene_Save) {
-            // ステータスシーンとセーブシーンはhelpAreaHeightが0
-            totalHeight = scene.mainAreaHeight();
+            availableTotalHeight = scene.mainAreaHeight();
         } else {
-            totalHeight = scene.helpAreaHeight() + scene.mainAreaHeight();
+            availableTotalHeight = scene.helpAreaHeight() + scene.mainAreaHeight();
         }
-        
-        const height = totalHeight - goldHeight;
+        const configured = getConfiguredMenuBarHeight(scene);
+        const totalHeight = configured > 0 ? Math.min(availableTotalHeight, configured) : availableTotalHeight;
+        const height = Math.max(0, totalHeight - goldHeight);
         return new Rectangle(x, y, width, height);
     }
 
     // メニューゴールドウィンドウの矩形を取得する共通メソッド
     function getMenuGoldWindowRect(scene) {
         const x = menuBarPosition === 'left' ? 0 : Graphics.boxWidth - menuBarWidth;
-        const goldHeight = scene.calcWindowHeight(1, true);
-        
-        let commandHeight;
+        const goldHeight = showGoldBar ? scene.calcWindowHeight(1, true) : 0;
+        let availableTotalHeight;
         if (scene.constructor === Scene_Status || scene.constructor === Scene_Save) {
-            commandHeight = scene.mainAreaHeight() - goldHeight;
+            availableTotalHeight = scene.mainAreaHeight();
         } else {
-            commandHeight = scene.helpAreaHeight() + scene.mainAreaHeight() - goldHeight;
+            availableTotalHeight = scene.helpAreaHeight() + scene.mainAreaHeight();
         }
-        
+        // ゴールド位置は従来の最下部に固定（共通高さ設定の影響を受けない）
+        const commandHeight = Math.max(0, availableTotalHeight - goldHeight);
         const y = scene.mainAreaTop() + commandHeight;
         const width = menuBarWidth;
         const height = goldHeight;
