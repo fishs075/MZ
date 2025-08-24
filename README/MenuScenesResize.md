@@ -2,7 +2,7 @@
 
 RPG Maker MZ用のプラグインで、メニューシーンに統一されたメニューバーを表示し、画面レイアウトを調整します。
 
-![Plugin Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Plugin Version](https://img.shields.io/badge/version-1.0.1-blue)
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-Free-brightgreen)
 
@@ -79,9 +79,11 @@ SideMenuScreen.js<br>
 | ステータスシーン有効 | ステータスシーンでメニューバーを表示 | true |
 | セーブシーン有効 | セーブシーンでメニューバーを表示 | true |
 | メニューバー幅 | メニューバーの幅（100-400px） | 240 |
+| メニューバー鷹さ | メニューバーの鷹さ（0でデフォルト高さ） | 0 |
 | メニューバー位置 | Left（左側）/ Right（右側） | Left |
 | メニューバー背景表示 | 背景の表示/非表示 | true |
 | メニューバー透明度 | 透明度（0-255） | 160 |
+| Gold表示 | Goldの表示/非表示 | true |
 
 ### カスタマイズ例
 
@@ -127,6 +129,10 @@ SideMenuScreen.js<br>
 - カスタムメニューシステムを大幅に変更するプラグインとは競合する可能性があります
 
 ## 📝 更新履歴
+
+### v1.0.1 (2025-08-23)
+- メニューの高さを設定可能に
+- Goldバーの表示/非表示を可能に
 
 ### v1.0.0 (2025-08-22)
 - 初回リリース
