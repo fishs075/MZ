@@ -20,7 +20,7 @@ SideMenuScreen.js<br>
 ※こちらは標準のメニューバーを左右に変更できるプラグインです。アクター表示も縦長配列になります<br>
 [ダウンロード先](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SideMenuScreen.js)
 
-<img src="../images/SideMenuScreen.png" width="400">
+<img src="../images/SideMenuScreen1.png" width="400"><img src="../images/SideMenuScreen2.png" width="400">
 
 ## 📋 機能概要
 
