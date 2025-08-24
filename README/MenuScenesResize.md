@@ -16,7 +16,7 @@ RPG Maker MZ用のプラグインで、メニューシーンに統一された�
 <img src="../images/MenuScenesResize3.png" width="400"><img src="../images/MenuScenesResize4.png" width="400">
 
 
-※こちらは標準のメニューバーを左右に変更できるプラグインです。アクター表示も縦長配列になります
+※こちらは標準のメニューバーを左右に変更できるプラグインです。アクター表示も縦長配列になります<br>
 [ダウンロード先](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SideMenuScreen.js)
 
 <img src="../images/SideMenuScreen.png" width="400">
