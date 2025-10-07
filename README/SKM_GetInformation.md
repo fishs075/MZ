@@ -11,8 +11,10 @@
 [安定版をダウンロード　その２](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/GetInformationMZ.js)<br>
 
 安定版は移植元に余計な機能はつけづになるべくMV版の再現に重きを置いています。
+
  - CommonPopupCoreMZ.js
- - GetInformationMZ.js<br>
+ - GetInformationMZ.js
+
 なお2ファイル構成ですので両方DLして有効化してください<br>
 
 <!-- ここに画像を入れる予定 -->
