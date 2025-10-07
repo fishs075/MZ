@@ -1,5 +1,8 @@
 # セーブメニュー＞データ管理コマンド置き換えプラグイン
 
+![Plugin Version](https://img.shields.io/badge/version-1.1.0-blue)
+![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
+![License](https://img.shields.io/badge/license-Free-brightgreen)
 
 [最新版DL](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX.js)
 
