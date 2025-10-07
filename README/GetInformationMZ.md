@@ -1,11 +1,11 @@
 # ポップアップ表示プラグイン（移植安定版）
 
-![Plugin Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Plugin Version](https://img.shields.io/badge/version-1.2.1-blue)
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
 
-[ベースプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/CommonPopupCoreMZ.js)<br>
+[汎用ポップアップベースプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/CommonPopupCoreMZ.js)<br>
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/GetInformationMZ.js)<br>
 
 安定版は移植元に余計な機能はつけづになるべくMV版の再現に重きを置いています。
@@ -13,14 +13,18 @@
  - CommonPopupCoreMZ.js
  - GetInformationMZ.js
 
-ポップアッププラグインを使用するにはベースプラグインが必要ですので両方DLして有効化してください
+ポップアップ表示プラグインを使用するには汎用ポップアップベースプラグインが必要ですので両方DLして有効化してください
 
 
 ## 概要
 RPGツクールMV用のポップアップ表示プラグインをMZで使えるように移植しました。アイテム入手や経験値獲得、レベルアップなどの際にポップアップ通知を表示する機能を提供します。
 
 ## 更新履歴
-
+ - ver1.2.1
+ - \FS[xx] フォントサイズを指定、は無効化されます
+ - 
+ - ver1.2
+ - MV版を再度移植しなおし。余計な機能はつけづ元の機能の再現にのみ注力
 
 
 
@@ -37,10 +41,9 @@ RPGツクールMV用のポップアップ表示プラグインをMZで使える�
 
 
 ## プラグインコマンド
-  - テキストのポップアップ
-     - プラグインコマンドからテキストのポップアップ通知が行えます。
-     - 制御文字は\FS（文字サイズ変更）は表示が狂うので使用しないでください。
-
+  - ◆インフォメーション表示
+     - 任意のテキストをポップアップで表示します。
+     - 制御文字（\I[n], \C[n]など）や改行（\n）が使用できます。
 
 
 ## ライセンス
