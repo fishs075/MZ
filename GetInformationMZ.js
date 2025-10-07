@@ -1,5 +1,5 @@
 //
-//  入手インフォメーション ver1.2
+//  入手インフォメーション ver1.21
 //
 // ------------------------------------------------------
 // Copyright (c) 2025 さかなのまえあし 
@@ -11,14 +11,14 @@
 //
 
 var Imported = Imported || {};
-Imported['GetInformationMZ'] = 1.2;
+Imported['GetInformationMZ'] = 1.21;
 
 if (!Imported.CommonPopupCoreMZ) {
     console.error('CommonPopupCoreMZを導入してください。')
 }
 /*:
  * @target MZ
- * @plugindesc ver1.2/アイテムの入手などにスライドアニメするインフォメーションを追加するプラグインです。
+ * @plugindesc ver1.21/アイテムの入手などにスライドアニメするインフォメーションを追加するプラグインです。
  * @author さかなのまえあし
  * 
  * @param defaultparam
@@ -401,8 +401,10 @@ if (!Imported.CommonPopupCoreMZ) {
  * 例：
  * \I[87]魔法の鍵\C[0]を手に入れた！\n\C[6]不思議な力を感じる...
  * 
+ * \FS[xx] フォントサイズを指定、は無効化されます
+ * 
  * ------------------------------------------------------
- * このプラグインには「汎用ポップアップベース」のプラグインが必要です。
+ * このプラグインには「汎用ポップアップベース(CommonPopupCoreMZ.js)」のプラグインが必要です。
  * 汎用ポップアップベースより下に配置してください。
  * また、それぞれの表示テキストに何も記載しない場合、そのインフォメーションを無効化できます。
  * ------------------------------------------------------
@@ -449,6 +451,9 @@ if (!Imported.CommonPopupCoreMZ) {
  * ------------------------------------------------------
  * 更新履歴:
  * for さかなのまえあし
+ * ver1.2.1:20251007
+ * \FS[xx] フォントサイズを指定、は無効化されます
+ * 
  * ver1.2:20251007
  * MV版を再度移植しなおし。余計な機能はつけづ元の機能の再現にのみ注力
  * 
@@ -1028,6 +1033,9 @@ if (!Imported.CommonPopupCoreMZ) {
             if (tx[3]) se.pan = parseInt(tx[3], 10);
             return '';  // 制御文字を削除
         }.bind(this));
+        
+        // ■ステップ2.5: テキストから \FS[xx] 制御文字を削除（表示崩れ防止）
+        text1 = text1.replace(/\\FS\[\d+\]/gi, '');
         
         // ■ステップ3: テキスト内の置換文字列を実際の値で置換
         var descs = object.description ? object.description.split(/\n/) : [];
