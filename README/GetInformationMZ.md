@@ -1,6 +1,6 @@
 # ポップアップ表示プラグイン（移植安定版）
 
-![Plugin Version](https://img.shields.io/badge/version-1.2.1-blue)
+![Plugin Version](https://img.shields.io/badge/version-1.2.2-blue)
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
@@ -20,6 +20,11 @@
 RPGツクールMV用のポップアップ表示プラグインをMZで使えるように移植しました。アイテム入手や経験値獲得、レベルアップなどの際にポップアップ通知を表示する機能を提供します。
 
 ## 更新履歴
+ - ver1.2.2:20251008
+     - 表示位置のデフォルトを（空白）からBottomに変更
+     - 表示位置TOPが大文字だったのでTopに調節（要再設定）
+     - スライド方向にAutoを追加。
+
  - ver1.2.1
      - \FS[xx] フォントサイズを指定、は無効化されます
 
