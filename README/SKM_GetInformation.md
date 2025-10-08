@@ -10,7 +10,9 @@
 [安定版をダウンロード](https://github.com/fishs075/MZ/blob/main/README/GetInformationMZ.md)<br>
 <br>
 安定版は移植元に余計な機能はつけづになるべくMV版の再現に重きを置いています。<br>
-
+<br>
+こちらは安定版をもとに作り直す予定です。現状DL非推奨。<br>
+DLは安定版をお願いします<br>
 
 <!-- ここに画像を入れる予定 -->
 
