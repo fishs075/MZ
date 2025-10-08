@@ -112,20 +112,20 @@ if (!Imported.CommonPopupCoreMZ) {
  * @param Info Position
  * @text 入手インフォの表示位置
  * @desc 入手インフォメーションの表示位置です。
- * Upを指定すると、画面上部になります。
+ * Topで画面上部に表示。Bottomで画面下部に表示。
  * @type select
- * @option
- * @option TOP
- * @default 
+ * @option Bottom
+ * @option Top
+ * @default Bottom
  * 
  * @param Info Slide Action
  * @text 入手インフォのスライド方向
- * @desc 入手インフォメーションのスライド方向です。
- * Downを指定すると、上から下になります。
+ * @desc 入手インフォメーションのスライド方向です。Autoを指定すると、表示位置がBottomの場合はUp、それ以外はDownになります。
  * @type select
+ * @option Auto
  * @option Up
  * @option Down
- * @default Up
+ * @default Auto
  * 
  * @param Info Sup X
  * @text 入手インフォの表示位置補正X座標
@@ -426,7 +426,7 @@ if (!Imported.CommonPopupCoreMZ) {
  * 
  * 
  * 
- * 連携プラグイン対応: 
+ * 連携プラグイン対応状況: 
  * - VXandAceHybridClass.js - MZ非対応
  * 経験値で成長するクラスとABPで成長するクラスを設定、クラスチェンジも可能
  * - BattleFormation.js - MZ非対応
@@ -451,6 +451,11 @@ if (!Imported.CommonPopupCoreMZ) {
  * ------------------------------------------------------
  * 更新履歴:
  * for さかなのまえあし
+ * ver1.2.2:20251008
+ * 表示位置のデフォルトを（空白）からBottomに変更
+ * 表示位置TOPが大文字だったのでTopに調節（要再設定）
+ * スライド方向にAutoを追加。
+ * 
  * ver1.2.1:20251007
  * \FS[xx] フォントサイズを指定、は無効化されます
  * 
@@ -536,8 +541,8 @@ if (!Imported.CommonPopupCoreMZ) {
     var enableOutMove = parameters['Enable Out Move'] === 'true';        // 退場時移動するか
     var infoSlideCount = 60;                                             // スライドカウント（固定値）
     var infoPattern = parameters['Info Pattern'] || 'Normal';            // 動作パターン
-    var infoPosition = String(parameters['Info Position'] || '');        // 表示位置（Up/空白）
-    var infoSlideAction = String(parameters['Info Slide Action'] || ''); // スライド方向（Down/空白）
+    var infoPosition = String(parameters['Info Position'] || 'Bottom');        // 表示位置（Top/Bottom）
+    var infoSlideActiontemp = String(parameters['Info Slide Action'] || 'Auto'); // スライド方向（Auto/Down/Up）
     var tempinfoSupX = Number(parameters['Info Sup X'] || 0);                // 位置補正X
     var infoSupX = tempinfoSupX -4;
     var tempinfoSupY = Number(parameters['Info Sup Y'] || 0);                // 位置補正Y
@@ -562,6 +567,15 @@ if (!Imported.CommonPopupCoreMZ) {
     var logRow = Number(parameters['Log Row'] || 1);                     // ログ1件の行数
     var logReverse = parameters['Log Reverse'] === 'true';               // ログ並び順を逆にするか
     var menuInfoLogName = parameters["Menu Info Log Name"] || '';        // メニューコマンド名
+
+
+    // ● スライド方向の設定
+    if(infoSlideActiontemp === 'Auto'){
+        var infoSlideAction = infoPosition === 'Bottom' ? 'Up' : 'Down'; //表示位置がBottomの場合はUp、それ以外はDown
+    }else{
+        var infoSlideAction = infoSlideActiontemp;
+    }
+
 
     //===========================================================================
     // プラグインコマンド: 任意テキストのインフォ表示 (MZ)
@@ -1116,8 +1130,8 @@ if (!Imported.CommonPopupCoreMZ) {
             arg.anchorY = 0;
         }
         
-        // 表示位置がUpなら上部に調整
-        if (infoPosition === 'TOP') {
+        // 表示位置がTopなら上部に調整
+        if (infoPosition === 'Top') {
             arg.y = 0;
             //infoSlideAction = 'Down';
             infoSupX = tempinfoSupX -4;
