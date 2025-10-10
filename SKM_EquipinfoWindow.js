@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc 装備情報プレビュー v1.1.0
+ * @plugindesc 装備情報プレビュー v1.1.1
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js
  *
@@ -161,6 +161,7 @@
  * このプラグインには、プラグインコマンドはありません。
  *
  * ■更新履歴
+ * v1.1.1 (2025/10/10) - 仕様を満たしていなかったのを修正
  * v1.1.0 (2025/10/10) - プレビューウィンドウの表示・非表示を切り替えるキー機能を追加
  * v1.0.2 (2025/02/10) - ウィンドウの幅をパラメータに合わせて動的に変動するように変更。ウインドウの右配置を設定可能に。
  * v1.0.1 (2025/02/09) - 基礎パラメーターの表示色を0と負の値に対しても適用。ウインドウの幅パラメータ負3桁に合わせて調整
@@ -1628,21 +1629,31 @@
     };
 
     Window_ItemList.prototype.createPreviewWindow = function () {
-        // シーンチェックを強化
+        // シーンチェック：ショップと戦闘以外のMenuBaseシーンで作成
+        // Scene_Item、Scene_Equipなどで動作するように
+        const scene = SceneManager._scene;
         const isValidScene =
-            !(SceneManager._scene instanceof Scene_Shop) &&
-            !(SceneManager._scene instanceof Scene_Battle) &&
-            SceneManager._scene instanceof Scene_MenuBase;
+            scene &&
+            !(scene instanceof Scene_Shop) &&
+            !(scene instanceof Scene_Battle) &&
+            (scene instanceof Scene_MenuBase || scene instanceof Scene_Equip);
 
-        if (isValidScene) {
+        if (isValidScene && !this._previewWindow) {
             this._previewWindow = new Window_ItemPreview();
-            SceneManager._scene.addWindow(this._previewWindow);
+            scene.addWindow(this._previewWindow);
+        }
+    };
+
+    Window_ItemList.prototype.ensurePreviewWindow = function () {
+        if (!this._previewWindow) {
+            this.createPreviewWindow();
         }
     };
 
     const _Window_ItemList_update = Window_ItemList.prototype.update;
     Window_ItemList.prototype.update = function () {
         _Window_ItemList_update.call(this);
+        this.ensurePreviewWindow();
         this.updateToggleKey();
         this.updatePreviewWindow();
     };
@@ -1699,26 +1710,9 @@
     //-----------------------------------------------------------------------------
     // Window_EquipItem
     //-----------------------------------------------------------------------------
-
-    const _Window_EquipItem_initialize = Window_EquipItem.prototype.initialize;
-    Window_EquipItem.prototype.initialize = function (rect) {
-        _Window_EquipItem_initialize.call(this, rect);
-        this.createPreviewWindow();
-    };
-
-    Window_EquipItem.prototype.createPreviewWindow =
-        Window_ItemList.prototype.createPreviewWindow;
-    Window_EquipItem.prototype.updateToggleKey =
-        Window_ItemList.prototype.updateToggleKey;
-    Window_EquipItem.prototype.updatePreviewWindow =
-        Window_ItemList.prototype.updatePreviewWindow;
-
-    const _Window_EquipItem_update = Window_EquipItem.prototype.update;
-    Window_EquipItem.prototype.update = function () {
-        _Window_EquipItem_update.call(this);
-        this.updateToggleKey();
-        this.updatePreviewWindow();
-    };
+    // Window_EquipItemはWindow_ItemListを継承しているので、
+    // 親クラスのプレビューウィンドウ機能をそのまま使用します。
+    // 追加のカスタマイズは不要です。
 
     const _Scene_Item_create = Scene_Item.prototype.create;
     Scene_Item.prototype.create = function () {
@@ -1756,91 +1750,103 @@
     };
 
     //-----------------------------------------------------------------------------
+    // Window_ShopBuy
+    //-----------------------------------------------------------------------------
+    const _Window_ShopBuy_initialize = Window_ShopBuy.prototype.initialize;
+    Window_ShopBuy.prototype.initialize = function (rect) {
+        _Window_ShopBuy_initialize.call(this, rect);
+        // initializeではプレビューウィンドウを作成しない
+    };
+
+    Window_ShopBuy.prototype.createPreviewWindow = function () {
+        // プレビューウィンドウを作成
+        if (!this._previewWindow && SceneManager._scene && SceneManager._scene.addWindow) {
+            this._previewWindow = new Window_ItemPreview();
+            SceneManager._scene.addWindow(this._previewWindow);
+        }
+    };
+
+    Window_ShopBuy.prototype.ensurePreviewWindow = function () {
+        if (!this._previewWindow) {
+            this.createPreviewWindow();
+        }
+    };
+
+    Window_ShopBuy.prototype.updateToggleKey =
+        Window_ItemList.prototype.updateToggleKey;
+    Window_ShopBuy.prototype.updatePreviewWindow =
+        Window_ItemList.prototype.updatePreviewWindow;
+
+    const _Window_ShopBuy_update = Window_ShopBuy.prototype.update;
+    Window_ShopBuy.prototype.update = function () {
+        _Window_ShopBuy_update.call(this);
+        this.ensurePreviewWindow();
+        this.updateToggleKey();
+        this.updatePreviewWindow();
+    };
+
+    Window_ShopBuy.prototype.show = function () {
+        Window_Selectable.prototype.show.call(this);
+        if (this._previewWindow) {
+            this._previewWindow.hide();
+        }
+    };
+
+    Window_ShopBuy.prototype.hide = function () {
+        Window_Selectable.prototype.hide.call(this);
+        if (this._previewWindow) {
+            this._previewWindow.hide();
+        }
+    };
+
+    Window_ShopBuy.prototype.destroy = function () {
+        if (this._previewWindow) {
+            this._previewWindow.contents.clear();
+            this._previewWindow.destroy();
+            this._previewWindow = null;
+        }
+        Window_Selectable.prototype.destroy.call(this);
+    };
+
+    //-----------------------------------------------------------------------------
+    // Window_ShopSell
+    //-----------------------------------------------------------------------------
+    // Window_ShopSellはWindow_ItemListを継承しています。
+    // Window_ItemListのupdateメソッドが既に呼ばれているので、
+    // createPreviewWindowだけをオーバーライドします。
+
+    Window_ShopSell.prototype.createPreviewWindow = function () {
+        // ショップシーン専用のプレビューウィンドウ作成
+        const scene = SceneManager._scene;
+        if (!this._previewWindow && scene && scene instanceof Scene_Shop && scene.addWindow) {
+            this._previewWindow = new Window_ItemPreview();
+            scene.addWindow(this._previewWindow);
+        }
+    };
+
+    //-----------------------------------------------------------------------------
     // Scene_Shop
     //-----------------------------------------------------------------------------
     const _Scene_Shop_create = Scene_Shop.prototype.create;
     Scene_Shop.prototype.create = function () {
         _Scene_Shop_create.call(this);
-        this.createHoverWindow();
     };
 
-    Scene_Shop.prototype.createHoverWindow = function () {
-        this._hoverWindow = new Window_ItemPreview();
-        this.addWindow(this._hoverWindow);
-    };
-
-    const _Scene_Shop_update = Scene_Shop.prototype.update;
-    Scene_Shop.prototype.update = function () {
-        _Scene_Shop_update.call(this);
-        this.updateToggleKey();
-        this.updateHoverWindow();
-    };
-
-    Scene_Shop.prototype.updateToggleKey = function () {
-        const buyWindow = this._buyWindow;
-        const sellWindow = this._sellWindow;
-        const activeWindow = buyWindow && buyWindow.active
-            ? buyWindow
-            : sellWindow && sellWindow.active
-            ? sellWindow
-            : null;
-
-        if (activeWindow && isToggleKeyPressed()) {
-            _previewEnabled = !_previewEnabled;
-            SoundManager.playCursor();
-            
-            // 即座に表示を更新
-            if (!_previewEnabled && this._hoverWindow) {
-                this._hoverWindow.hide();
-            }
+    const _Scene_Shop_createBuyWindow = Scene_Shop.prototype.createBuyWindow;
+    Scene_Shop.prototype.createBuyWindow = function () {
+        _Scene_Shop_createBuyWindow.call(this);
+        // 買うウィンドウ作成後にプレビューウィンドウを確実に作成
+        if (this._buyWindow && !this._buyWindow._previewWindow) {
+            this._buyWindow.createPreviewWindow();
         }
     };
 
-    Scene_Shop.prototype.updateHoverWindow = function () {
-        if (!this._hoverWindow) return;
-
-        // プレビューが無効な場合は非表示にする
-        if (!_previewEnabled) {
-            this._hoverWindow.hide();
-            return;
-        }
-
-        const buyWindow = this._buyWindow;
-        const sellWindow = this._sellWindow;
-        if (!buyWindow || !sellWindow) return;
-
-        const activeWindow = buyWindow.active
-            ? buyWindow
-            : sellWindow.active
-            ? sellWindow
-            : null;
-
-        try {
-            if (activeWindow && activeWindow.item()) {
-                const item = activeWindow.item();
-                if (DataManager.isWeapon(item) || DataManager.isArmor(item)) {
-                    const rect = activeWindow.itemLineRect(
-                        activeWindow.index()
-                    );
-                    if (!rect) return;
-
-                    const globalPos = activeWindow.getGlobalPosition(rect);
-                    this._hoverWindow.setItem(item);
-                    this._hoverWindow.updatePosition(
-                        globalPos.x,
-                        globalPos.y,
-                        activeWindow
-                    );
-                    this._hoverWindow.show();
-                } else {
-                    this._hoverWindow.hide();
-                }
-            } else {
-                this._hoverWindow.hide();
-            }
-        } catch (e) {
-            console.error("SKM_EquipinfoWindow: Error in updateHoverWindow", e);
-            this._hoverWindow.hide();
+    const _Scene_Shop_createSellWindow = Scene_Shop.prototype.createSellWindow;
+    Scene_Shop.prototype.createSellWindow = function () {
+        _Scene_Shop_createSellWindow.call(this);
+        // 売るウィンドウ作成後にプレビューウィンドウを確実に作成
+        if (this._sellWindow && !this._sellWindow._previewWindow) {
+            this._sellWindow.createPreviewWindow();
         }
     };
 
@@ -2007,7 +2013,6 @@
         // 各ウィンドウのプレビューを安全に破棄
         const windows = [
             this._itemWindow,
-            this._equipWindow,
             this._buyWindow,
             this._sellWindow,
         ];
@@ -2018,11 +2023,6 @@
                 window._previewWindow = null;
             }
         });
-
-        if (this._hoverWindow) {
-            this._hoverWindow.destroy();
-            this._hoverWindow = null;
-        }
     };
 
     Window_ItemList.prototype.show = function () {
@@ -2116,7 +2116,6 @@
             this._itemWindow,
             this._buyWindow,
             this._sellWindow,
-            this._equipWindow,
         ];
 
         windows.forEach((window) => {
