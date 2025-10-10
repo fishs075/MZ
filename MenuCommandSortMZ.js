@@ -3,19 +3,18 @@
 //
 // ------------------------------------------------------
 // Copyright (c) 2016 Yana
-// Copyright (c) 2025 さかなのまえあし
 // Released under the MIT license
 // http://opensource.org/licenses/mit-license.php
 // ------------------------------------------------------
 //
-// author さかなのまえあし
-// RPGツクールMZ対応 2025
+// author Yana
+// RPGツクールMZ対応 2023
 //
 
 /*:
  * @target MZ
  * @plugindesc メニューコマンドを並び替えたり表示非表示をオンオフできるようにします。
- * @author さかなのまえあし
+ * @author Yana
  * @version 2.0.0
  *
  * @param EnableSwitchId
@@ -168,11 +167,6 @@
  * (24を設定し、コマンドが7つの場合、24,25,26,27,28,29,30を使用します)
  * ロードも追加します。
  *
- * なお、有効化スイッチ無効化をONにすると、
- * スイッチチェックの条件を無視して、メニューリストを書き換えます。
- * 徐々にコマンドを出すのではなくただ並び替えたい場合はこちらをお使いください。
- *
- *
  * Add Commonの設定は、
  * シンボル,表示名,コモンイベントID,変数ID
  * の順番で行います。
@@ -189,14 +183,15 @@
  * 二次配布も制限はしませんが、サポートは行いません。
  * 著作表示は任意です。行わなくても利用できます。
  * 要するに、特に規約はありません。
- * バグ報告や使用方法等のお問合せはGit-HubのIssueにお願いします。
+ * バグ報告や使用方法等のお問合せはネ実ツクールスレ、または、Twitterにお願いします。
+ * https://twitter.com/yanatsuki_
  * 素材利用は自己責任でお願いします。
  * ------------------------------------------------------
  * 更新履歴:
+ * ver2.0.1:
+ * アクター選択ありのコモンイベント実行時、正常にアクターIDを取得できていないバグを修正。
  * ver2.0.0:
  * RPGツクールMZ対応版として公開
- * author さかなのまえあし
- *
  * ver1.021:180409
  * プラグインパラメータの仕様を1.5.0に更新。
  * ver1.02:
@@ -205,7 +200,6 @@
  * アクターを選択するコモンイベント実行時、正常にアクターIDを取得できていないバグを修正。
  * ver1.00:
  * 公開
- * author Yana
  */
 
 (() => {
@@ -390,15 +384,19 @@
         const symbol = this._commandWindow.currentSymbol();
         const command = addCommons[symbol];
 
-        if (command && command[3]) {
-            const variableId = Number(command[3]);
-            const actor = $gameParty.members()[this._statusWindow.index()];
-            if (actor) {
-                const actorId = actor.actorId();
-                $gameVariables.setValue(variableId, actorId);
+        // 追加コマンド（アクター選択あり）のみ独自処理し、
+        // それ以外（skill/equip/status 等）は元の処理へフォールバックする
+        if (command) {
+            if (command[3]) {
+                const variableId = Number(command[3]);
+                const actor = $gameParty.members()[this._statusWindow.index()];
+                if (actor) {
+                    $gameVariables.setValue(variableId, actor.actorId());
+                }
             }
+            this.commandCommonMenu();
+        } else {
+            _Scene_Menu_onPersonalOk.call(this);
         }
-
-        this.commandCommonMenu();
     };
 })();
