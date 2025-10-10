@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc 装備情報プレビュー v1.0.2
+ * @plugindesc 装備情報プレビュー v1.1.0
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/blob/main/SKM_EquipinfoWindow.js
  *
@@ -66,6 +66,24 @@
  * @desc プレビューウィンドウの表示位置を設定します。
  * @default left
  *
+ * @param ToggleKey
+ * @text 表示切替キー
+ * @type select
+ * @option 使用しない
+ * @value none
+ * @option PageUp
+ * @value pageup
+ * @option PageDown
+ * @value pagedown
+ * @option Shift
+ * @value shift
+ * @option Control
+ * @value control
+ * @option Tab
+ * @value tab
+ * @desc プレビューウィンドウの表示・非表示を切り替えるキーを設定します。「使用しない」を選択すると切り替え機能が無効になります。
+ * @default shift
+ *
  * @help SKM_EquipinfoWindow.js
  *
  * ■概要
@@ -122,6 +140,9 @@
  * 1. プラグインをプロジェクトに導入
  * 2. プラグインパラメータで表示名をカスタマイズ
  * 3. 必要に応じてメモ欄に追加特徴を記述
+ * 4. ゲーム中にプラグインパラメータで設定したキー（デフォルト：Shift）を押すことで
+ *    プレビューウィンドウの表示・非表示を切り替えられます
+ *    ※表示切替キーを「使用しない」に設定すると、切り替え機能が無効になります
  *
  * ■表示例
  * 鉄の剣
@@ -140,6 +161,7 @@
  * このプラグインには、プラグインコマンドはありません。
  *
  * ■更新履歴
+ * v1.1.0 (2025/10/10) - プレビューウィンドウの表示・非表示を切り替えるキー機能を追加
  * v1.0.2 (2025/02/10) - ウィンドウの幅をパラメータに合わせて動的に変動するように変更。ウインドウの右配置を設定可能に。
  * v1.0.1 (2025/02/09) - 基礎パラメーターの表示色を0と負の値に対しても適用。ウインドウの幅パラメータ負3桁に合わせて調整
  * v1.0.0 (2025/02/06) - 初版リリース
@@ -280,6 +302,33 @@
 
     // パラメータの解析部分に追加
     const windowPosition = String(parameters.WindowPosition || "left");
+    const toggleKey = String(parameters.ToggleKey || "pageup");
+
+    // プレビューウィンドウの表示状態を管理するグローバル変数
+    let _previewEnabled = true;
+
+    // トグルキーの入力を検知する関数
+    function isToggleKeyPressed() {
+        // 「使用しない」が選択されている場合は常にfalseを返す
+        if (toggleKey === "none") {
+            return false;
+        }
+        
+        switch (toggleKey) {
+            case "pageup":
+                return Input.isTriggered("pageup");
+            case "pagedown":
+                return Input.isTriggered("pagedown");
+            case "shift":
+                return Input.isTriggered("shift");
+            case "control":
+                return Input.isTriggered("control");
+            case "tab":
+                return Input.isTriggered("tab");
+            default:
+                return Input.isTriggered("pageup");
+        }
+    }
 
     // 特徴コードを定数として定義
     const TRAIT_CODES = {
@@ -1594,11 +1643,30 @@
     const _Window_ItemList_update = Window_ItemList.prototype.update;
     Window_ItemList.prototype.update = function () {
         _Window_ItemList_update.call(this);
+        this.updateToggleKey();
         this.updatePreviewWindow();
+    };
+
+    Window_ItemList.prototype.updateToggleKey = function () {
+        if (this.active && isToggleKeyPressed()) {
+            _previewEnabled = !_previewEnabled;
+            SoundManager.playCursor();
+            
+            // 即座に表示を更新
+            if (!_previewEnabled && this._previewWindow) {
+                this._previewWindow.hide();
+            }
+        }
     };
 
     Window_ItemList.prototype.updatePreviewWindow = function () {
         if (!this._previewWindow) return;
+
+        // プレビューが無効な場合は非表示にする
+        if (!_previewEnabled) {
+            this._previewWindow.hide();
+            return;
+        }
 
         if (this.active && this.item()) {
             const item = this.item();
@@ -1640,8 +1708,17 @@
 
     Window_EquipItem.prototype.createPreviewWindow =
         Window_ItemList.prototype.createPreviewWindow;
+    Window_EquipItem.prototype.updateToggleKey =
+        Window_ItemList.prototype.updateToggleKey;
     Window_EquipItem.prototype.updatePreviewWindow =
         Window_ItemList.prototype.updatePreviewWindow;
+
+    const _Window_EquipItem_update = Window_EquipItem.prototype.update;
+    Window_EquipItem.prototype.update = function () {
+        _Window_EquipItem_update.call(this);
+        this.updateToggleKey();
+        this.updatePreviewWindow();
+    };
 
     const _Scene_Item_create = Scene_Item.prototype.create;
     Scene_Item.prototype.create = function () {
@@ -1695,11 +1772,38 @@
     const _Scene_Shop_update = Scene_Shop.prototype.update;
     Scene_Shop.prototype.update = function () {
         _Scene_Shop_update.call(this);
+        this.updateToggleKey();
         this.updateHoverWindow();
+    };
+
+    Scene_Shop.prototype.updateToggleKey = function () {
+        const buyWindow = this._buyWindow;
+        const sellWindow = this._sellWindow;
+        const activeWindow = buyWindow && buyWindow.active
+            ? buyWindow
+            : sellWindow && sellWindow.active
+            ? sellWindow
+            : null;
+
+        if (activeWindow && isToggleKeyPressed()) {
+            _previewEnabled = !_previewEnabled;
+            SoundManager.playCursor();
+            
+            // 即座に表示を更新
+            if (!_previewEnabled && this._hoverWindow) {
+                this._hoverWindow.hide();
+            }
+        }
     };
 
     Scene_Shop.prototype.updateHoverWindow = function () {
         if (!this._hoverWindow) return;
+
+        // プレビューが無効な場合は非表示にする
+        if (!_previewEnabled) {
+            this._hoverWindow.hide();
+            return;
+        }
 
         const buyWindow = this._buyWindow;
         const sellWindow = this._sellWindow;
@@ -1891,68 +1995,7 @@
         );
     };
 
-    // アイテムリストでの位置更新処理を修正
-    Window_ItemList.prototype.updatePreviewWindow = function () {
-        if (!this._previewWindow) return;
 
-        if (this.active && this.item()) {
-            const item = this.item();
-            if (DataManager.isWeapon(item) || DataManager.isArmor(item)) {
-                const rect = this.itemLineRect(this.index());
-                const globalPos = this.getGlobalPosition(rect);
-
-                this._previewWindow.setItem(item);
-                this._previewWindow.updatePosition(
-                    globalPos.x,
-                    globalPos.y,
-                    this
-                );
-                this._previewWindow.show();
-
-                // ウィンドウを最前面に
-                const scene = SceneManager._scene;
-                if (scene) {
-                    scene._windowLayer.removeChild(this._previewWindow);
-                    scene._windowLayer.addChild(this._previewWindow);
-                }
-            } else {
-                this._previewWindow.hide();
-            }
-        } else {
-            this._previewWindow.hide();
-        }
-    };
-
-    // ショップ画面での位置更新処理を修正
-    Scene_Shop.prototype.updateHoverWindow = function () {
-        const buyWindow = this._buyWindow;
-        const sellWindow = this._sellWindow;
-        const activeWindow = buyWindow.active
-            ? buyWindow
-            : sellWindow.active
-            ? sellWindow
-            : null;
-
-        if (activeWindow && activeWindow.item()) {
-            const item = activeWindow.item();
-            if (DataManager.isWeapon(item) || DataManager.isArmor(item)) {
-                const rect = activeWindow.itemLineRect(activeWindow.index());
-                const globalPos = activeWindow.getGlobalPosition(rect);
-
-                this._hoverWindow.setItem(item);
-                this._hoverWindow.updatePosition(
-                    globalPos.x,
-                    globalPos.y,
-                    activeWindow
-                );
-                this._hoverWindow.show();
-            } else {
-                this._hoverWindow.hide();
-            }
-        } else {
-            this._hoverWindow.hide();
-        }
-    };
 
     const _Scene_Base_terminate = Scene_Base.prototype.terminate;
     Scene_Base.prototype.terminate = function () {
