@@ -10,6 +10,11 @@ RPGツクールMZ用プラグイン。装備シーン右側に「パーティ選
 
 [ダウンロード先](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_EquipPartySelect.js)
 
+## サンプル
+<img src="../images/SKM_EquipPartySelect.png" width="400">
+
+
+
 ## 主な機能
 - 追加ウィンドウでアクター一覧を横並び表示
 - 画像タイプ切替（imageType）
