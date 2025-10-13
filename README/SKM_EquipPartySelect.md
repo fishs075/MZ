@@ -12,7 +12,7 @@ RPGツクールMZ用プラグイン。装備シーン右側に「パーティ選
 
 ## サンプル
 <img src="../images/SKM_EquipPartySelect1.png" width="400">
-<img src="../images/SKM_EquipPartySelect2.png" width="400"><br>
+<img src="../images/SKM_EquipPartySelect2.png" width="400">
 <img src="../images/SKM_EquipPartySelect3.png" width="400">
 
 ## 主な機能
