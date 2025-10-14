@@ -1,8 +1,10 @@
-# ポップアップ表示プラグイン
-
 ![Plugin Version](https://img.shields.io/badge/version-1.0.1-blue)
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-Free-brightgreen)
+
+# ポップアップ表示プラグイン
+
+
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_GetInformation.js)<br>
 <br>
