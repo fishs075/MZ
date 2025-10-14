@@ -1,10 +1,12 @@
+![Plugin Version](https://img.shields.io/badge/version-1.0.0-blue)
+![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
+![License](https://img.shields.io/badge/license-Free-brightgreen)
+
 # SKM_EquipPartySelect
 
 RPGツクールMZ用プラグイン。装備シーン右側に「パーティ選択ウィンドウ」を追加し、クリック/タップや PageUp/PageDown で装備対象アクターを素早く切替できます。レイアウト変更系の横幅調整にも追従します.
 
-![Plugin Version](https://img.shields.io/badge/version-1.0.0-blue)
-![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
-![License](https://img.shields.io/badge/license-Free-brightgreen)
+
 
 ## DL リンク
 
