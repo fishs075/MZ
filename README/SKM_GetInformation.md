@@ -9,7 +9,7 @@
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_GetInformation.js)<br>
 <br>
 
-[安定版をダウンロード](https://github.com/fishs075/MZ/blob/main/README/GetInformationMZ.md)<br>
+[安定版のページへ](https://github.com/fishs075/MZ/blob/main/README/GetInformationMZ.md)<br>
 <br>
 安定版は移植元に余計な機能はつけづになるべくMV版の再現に重きを置いています。<br>
 <br>

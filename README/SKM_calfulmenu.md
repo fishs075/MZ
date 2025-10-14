@@ -1,3 +1,7 @@
+![Plugin Version](https://img.shields.io/badge/version-1.0.4-blue)
+![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
+![License](https://img.shields.io/badge/license-Free-brightgreen)
+
 # カラフルメニューカスタマイズプラグイン
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulmenu.js)

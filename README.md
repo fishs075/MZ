@@ -1,30 +1,38 @@
 # ようこそ、RPG ツクール MZ のプラグイン公開所へ
 
-## プラグイン一覧
 
--   [装備情報プレビュー](https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md)
+## プラグイン一覧（README フォルダ）
 
--   [アクター容姿変更](https://github.com/fishs075/MZ/blob/main/README/SKM_ChangeActorImageSystem.md)
-
--   [セーブメニュー＞データ管理コマンド置き換え](https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md)
-
--   [カラフルメニューカスタマイズプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_calfulmenu.md)
-
--   [ポップアップ表示プラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_GetInformation.md)
-
--   [アクターカードスタイルプラグイン](https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md)
-
-
-
+| ドキュメント | リンク |
+|---|---|
+| 装備情報プレビュー | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md |
+| アクター容姿変更 | https://github.com/fishs075/MZ/blob/main/README/SKM_ChangeActorImageSystem.md |
+| セーブメニュー＞データ管理コマンド置き換え | https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md |
+| カラフルメニューカスタマイズプラグイン | https://github.com/fishs075/MZ/blob/main/README/SKM_calfulmenu.md |
+| ポップアップ表示プラグイン | https://github.com/fishs075/MZ/blob/main/README/SKM_GetInformation.md |
+| アクターカードスタイルプラグイン | https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md |
+| メニュー画面サイズ調整 | https://github.com/fishs075/MZ/blob/main/README/MenuScenesResize.md |
+| スキルレベル・スキルデザイン | https://github.com/fishs075/MZ/blob/main/README/SkillLevel_SkillDesigns.md |
+| 装備パーティ選択 | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipPartySelect.md |
 
 
--   [武器・防具タイプを封印するプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/WeaponArmorTypeSeal.js)
--   [ピクチャに発光効果とアニメーションを適用するプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_PictureGlow.js)
+## MVより移植
+| ドキュメント | リンク |
+|---|---|
+| CommonPopupCore MZ | https://github.com/fishs075/MZ/blob/main/README/CommonPopupCoreMZ.md |
+| GetInformation MZ | https://github.com/fishs075/MZ/blob/main/README/GetInformationMZ.md |
+| メニューコマンド並び替え | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSortMZ.js |
 
 
+## README のないそのほかのプラグイン
 
-### MVより移植
-- [メニューコマンド並び替え](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSortMZ.js)
+| プラグイン | リンク |
+|---|---|
+| サイドメニュースクリーン | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SideMenuScreen.js |
+| バトルコマンド演出カスタマイズ | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulbattlecommand.js |
+| ピクチャ発光・アニメーション | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_PictureGlow.js |
+| セーブ/ロード/削除の確認ダイアログ | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX_op.js |
+| 武器・防具タイプ封印 | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/WeaponArmorTypeSeal.js |
 
 
 ## 利用規約
@@ -32,6 +40,7 @@
 -   クレジット表記は不要です
 -   商用利用可
 -   改変可
+-   ライセンスは各々のプラグイン記載による
 
 -   素材単体の再配布禁止
 

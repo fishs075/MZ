@@ -4,7 +4,7 @@
 
 # ポップアップ表示プラグイン（MZ移植安定版）
 
-[汎用ポップアップベースプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/CommonPopupCoreMZ.js)<br>
+[汎用ポップアップベースプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/CommonPopupCoreMZ.md)<br>
 
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/GetInformationMZ.js)<br>
 
