@@ -7,13 +7,12 @@
 |---|---|
 | 装備情報プレビュー | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md |
 | アクター容姿変更 | https://github.com/fishs075/MZ/blob/main/README/SKM_ChangeActorImageSystem.md |
-| セーブメニュー＞データ管理コマンド置き換え | https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md |
-| カラフルメニューカスタマイズプラグイン | https://github.com/fishs075/MZ/blob/main/README/SKM_calfulmenu.md |
-| ポップアップ表示プラグイン | https://github.com/fishs075/MZ/blob/main/README/SKM_GetInformation.md |
-| アクターカードスタイルプラグイン | https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md |
+| データ管理コマンド | https://github.com/fishs075/MZ/blob/main/README/SKM_savemenuEX.md |
+| カラフルメニュー | https://github.com/fishs075/MZ/blob/main/README/SKM_calfulmenu.md |
+| ポップアップ表示 | https://github.com/fishs075/MZ/blob/main/README/SKM_GetInformation.md |
+| アクターカードスタイル | https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md |
 | メニュー画面サイズ調整 | https://github.com/fishs075/MZ/blob/main/README/MenuScenesResize.md |
-| スキルレベル・スキルデザイン | https://github.com/fishs075/MZ/blob/main/README/SkillLevel_SkillDesigns.md |
-| 装備パーティ選択 | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipPartySelect.md |
+| 装備画面パーティ選択 | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipPartySelect.md |
 
 
 ## MVより移植
@@ -34,6 +33,11 @@
 | セーブ/ロード/削除の確認ダイアログ | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX_op.js |
 | 武器・防具タイプ封印 | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/WeaponArmorTypeSeal.js |
 
+## 読み物
+
+| ドキュメント | リンク |
+|---|---|
+| スキルレベル・スキルデザインガイド | https://github.com/fishs075/MZ/blob/main/README/SkillLevel_SkillDesigns.md |
 
 ## 利用規約
 
