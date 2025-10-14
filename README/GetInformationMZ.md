@@ -1,17 +1,14 @@
-# ポップアップ表示プラグイン（移植安定版）
-
 ![Plugin Version](https://img.shields.io/badge/version-1.2.2-blue)
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
+# ポップアップ表示プラグイン（MZ移植安定版）
 
 [汎用ポップアップベースプラグイン](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/CommonPopupCoreMZ.js)<br>
+
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/GetInformationMZ.js)<br>
 
-安定版は移植元に余計な機能はつけづになるべくMV版の再現に重きを置いています。
-
- - CommonPopupCoreMZ.js
- - GetInformationMZ.js
+安定版は移植元に余計な機能はつけづになるべくMV版の再現に重きを置いています。<br>
 
 ポップアップ表示プラグインを使用するには汎用ポップアップベースプラグインが必要ですので両方DLして有効化してください
 
