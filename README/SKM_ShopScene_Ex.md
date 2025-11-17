@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-Free-brightgreen)
 
 
-# SKM_ShopScene_Ex
+# SKM_ShopScene_Ex.js
 
 このプラグインは<br>
 うなぎおおとろさんのショップ画面拡張 ShopScene_Extension.js<br>
@@ -55,23 +55,23 @@ http://woodpenguin.blog.fc2.com/<br>
 
 
 ## 【ライセンス】
-このプラグインは、元となったプラグインがMITライセンスで配布しているため
-このプラグインもMITライセンスの条件の下で利用可能とします。
-
-Copyright (c) 2023 Sakananomaeasi Penguin
-Released under the MIT license
-http://opensource.org/licenses/mit-license.php
-
-Copyright (c) 2020 unagiootoro
-Released under the MIT license
+このプラグインは、元となったプラグインがMITライセンスで配布しているため<br>
+このプラグインもMITライセンスの条件の下で利用可能とします。<br>
+<br>
+Copyright (c) 2023 Sakananomaeasi Penguin<br>
+Released under the MIT license<br>
+http://opensource.org/licenses/mit-license.php<br>
+<br>
+Copyright (c) 2020 unagiootoro<br>
+Released under the MIT license<br>
 https://raw.githubusercontent.com/unagiootoro/RPGMZ/refs/heads/master/LICENSE
 
-Copyright (c) 2016 Yana
-Released under the MIT license
+Copyright (c) 2016 Yana<br>
+Released under the MIT license<br>
 http://opensource.org/licenses/mit-license.php
 
-Copyright (c) 2022 Mokusei Penguin
-Released under the MIT license
+Copyright (c) 2022 Mokusei Penguin<br>
+Released under the MIT license<br>
 https://opensource.org/licenses/mit-license.php
 
 
