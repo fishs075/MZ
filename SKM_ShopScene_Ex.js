@@ -56,6 +56,11 @@
 チップチャラだけでなくフェイス画像にも対応しております
 
 
+ver1.4.0へのアップデートにあたり一部挙動が変化しております
+装備不能時に何も表示させたくない場合は”ステータス表示ルール”の”通常”欄を消去してください
+
+
+
 ▼ 武器・防具のメモ
  〇 <mppEqSt:name1, name2, ...>
   - ショップ画面ののステータスウィンドウにオリジナルのパラメータ名を表示させます。
@@ -71,7 +76,7 @@
 うなぎおおとろさんのショップ画面拡張 ShopScene_Extension.js
 https://raw.githubusercontent.com/unagiootoro/RPGMZ/master/ShopScene_Extension.js
 Yanaさんのミニインフォメーションウィンドウ MiniInformationWindow.js
-http://opensource.org/licenses/mit-license.php
+
 木星ペンギンさんの装備ステータスの表示内容を変更 MPP_EquipStatusEX.js およびショップ対応 MPP_EquipStatusEX_Op1.js
 http://woodpenguin.blog.fc2.com/
 
