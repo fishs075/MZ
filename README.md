@@ -30,7 +30,6 @@
 | サイドメニュースクリーン | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SideMenuScreen.js |
 | バトルコマンド演出カスタマイズ | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulbattlecommand.js |
 | ピクチャ発光・アニメーション | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_PictureGlow.js |
-| セーブ/ロード/削除の確認ダイアログ | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SavemenuEX_op.js |
 | 武器・防具タイプ封印 | https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/WeaponArmorTypeSeal.js |
 
 ## 読み物
