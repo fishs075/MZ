@@ -27,7 +27,7 @@ http://woodpenguin.blog.fc2.com/<br>
 
 ## オプション（ShopPartySelect.js）
 
-ショップ画面のステータス上部に、パーティ人数分の簡易アイコン（顔/歩行）を<br>
+ショップ画面のステータス上部に、パーティ人数分の簡易アイコン（顔/歩行/SV）を<br>
 横並びで表示する選択ウィンドウを追加します。クリック/タップで<br>
 ステータス表示対象のアクターを切り替えできます。<br>
 <br>
@@ -37,7 +37,7 @@ http://woodpenguin.blog.fc2.com/<br>
 <br>
 プラグインコマンドはありません。<br>
 
-
+■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/ShopPartySelect.js)
 
 
 
