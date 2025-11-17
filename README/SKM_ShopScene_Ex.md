@@ -18,7 +18,7 @@ http://woodpenguin.blog.fc2.com/<br>
 
 
 
-[DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopScene_Ex.js)
+![DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopScene_Ex.js)
 
 
 
