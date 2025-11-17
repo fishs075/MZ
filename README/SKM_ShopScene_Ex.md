@@ -16,7 +16,8 @@ http://woodpenguin.blog.fc2.com/<br>
 これらを組み合わせて独自要素を追加したショップ画面拡張プラグインです<br>
 <br>
 
-
+<img src="./images/SKM_ShopScene_Ex1.png" width="400">
+<img src="./images/SKM_ShopScene_Ex2.png" width="400">
 
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopScene_Ex.js)
 
