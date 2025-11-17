@@ -1,7 +1,7 @@
 //=============================================================================
 // SKM_ShopScene_Ex.js
 //=============================================================================
-// Copyright (c) 2023 Sakananomaeasi Penguin
+// Copyright (c) 2023 Sakananomaeasi
 // Released under the MIT license
 // http://opensource.org/licenses/mit-license.php
 //
