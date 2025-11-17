@@ -5,16 +5,16 @@
 
 # SKM_ShopScene_Ex
 
- * このプラグインは
- * うなぎおおとろさんのショップ画面拡張 ShopScene_Extension.js
- * https://raw.githubusercontent.com/unagiootoro/RPGMZ/master/ShopScene_Extension.js
- * Yanaさんのミニインフォメーションウィンドウ MiniInformationWindow.js
- * 
- * 木星ペンギンさんの装備ステータスの表示内容を変更 MPP_EquipStatusEX.js およびショップ対応 MPP_EquipStatusEX_Op1.js
- * http://woodpenguin.blog.fc2.com/
- * 
- * これらを組み合わせて独自要素を追加したショップ画面拡張プラグインです
+このプラグインは<br>
+うなぎおおとろさんのショップ画面拡張 ShopScene_Extension.js<br>
+https://raw.githubusercontent.com/unagiootoro/RPGMZ/master/ShopScene_Extension.js<br>
+Yanaさんのミニインフォメーションウィンドウ MiniInformationWindow.js<br>
+<br>
+木星ペンギンさんの装備ステータスの表示内容を変更 MPP_EquipStatusEX.js およびショップ対応 MPP_EquipStatusEX_Op1.js<br>
+http://woodpenguin.blog.fc2.com/<br>
 
+これらを組み合わせて独自要素を追加したショップ画面拡張プラグインです<br>
+<br>
 
 
 
@@ -23,7 +23,7 @@
 
 
 
-
+<br>
 
 
 
