@@ -37,6 +37,8 @@ http://woodpenguin.blog.fc2.com/<br>
 <br>
 プラグインコマンドはありません。<br>
 
+<img src="./images/ShopPartySelect.png" width="400">
+
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/ShopPartySelect.js)
 
 
