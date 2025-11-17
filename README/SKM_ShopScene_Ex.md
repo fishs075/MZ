@@ -9,7 +9,7 @@
  * うなぎおおとろさんのショップ画面拡張 ShopScene_Extension.js
  * https://raw.githubusercontent.com/unagiootoro/RPGMZ/master/ShopScene_Extension.js
  * Yanaさんのミニインフォメーションウィンドウ MiniInformationWindow.js
- * http://opensource.org/licenses/mit-license.php
+ * 
  * 木星ペンギンさんの装備ステータスの表示内容を変更 MPP_EquipStatusEX.js およびショップ対応 MPP_EquipStatusEX_Op1.js
  * http://woodpenguin.blog.fc2.com/
  * 
@@ -18,6 +18,7 @@
 
 
 
+[DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopScene_Ex.js)
 
 
 
@@ -30,8 +31,16 @@
 
 
 
-
-
+## 【更新履歴】
+1.0.0 初版
+1.0.1 バグ修正
+1.0.2 競合しそうな関数名をリネーム
+1.1.0 アイテムステータス画面をカスタマイズ可能にした
+1.2.0 とんび様のキャラデータを参考に長身キャラチップに暫定対応
+1.2.1 縦72のキャラチップに対応。プラグインパラメータから設定して下さい
+1.2.5 アイコンを縮小表示するようにした。レイアウト調節
+1.3.0 リファクタリング（仮版:動作チェック後）
+1.4.0 プラグインパラメータの整理・リネーム
 
 
 
