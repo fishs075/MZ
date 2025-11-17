@@ -4,7 +4,7 @@
 /*:
  * @target MZ
  * @plugindesc ショップ画面にパーティ選択ウィンドウと空ウィンドウを追加します。
- * @author GPT-5 Assistant
+ * @author sakananomaeasi with GPT-5 Assistant
  * @url 
  * @help
  * ショップ画面のステータス上部に、パーティ人数分の簡易アイコン（顔/歩行/SV）を
