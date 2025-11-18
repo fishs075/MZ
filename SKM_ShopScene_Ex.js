@@ -496,7 +496,7 @@
  * @type select
  * @option なし
  * @value 0
- * @option 罫線
+ * @option ライン
  * @value 1
  * @option 名前
  * @value 2
@@ -1583,7 +1583,9 @@ class ItemDisplayHandler {
      * @param {number} y Y座標
      */
     static display(window, item, data, x, y) {
-        const type = parseInt(data.DateSelect);
+        const rawType = data.displayType ?? data.DateSelect ?? data.type ?? data.Type;
+        const type = Number(rawType);
+        if (!Number.isFinite(type)) return;
         const handler = this.handlers.get(type);
         if (handler) {
             handler.call(window, item, data, x, y);
