@@ -26,7 +26,7 @@ http://woodpenguin.blog.fc2.com/<br>
 
 <br>
 
-## オプション（ShopPartySelect.js）
+## オプション１（ShopPartySelect.js）
 
 ショップ画面のステータス上部に、パーティ人数分の簡易アイコン（顔/歩行/SV）を<br>
 横並びで表示する選択ウィンドウを追加します。クリック/タップで<br>
@@ -41,6 +41,18 @@ http://woodpenguin.blog.fc2.com/<br>
 <img src="./images/ShopPartySelect.png" width="400">
 
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/ShopPartySelect.js)
+
+
+
+## オプション２（SKM_ShopWindowClamp.js）
+
+プラグインコマンドで「次に実行するショップの処理」だけ、<br>
+ゴールドウィンドウ以外の各ウィンドウを指定した横幅に収めます。<br>
+プラグインコマンドを実行しなかった場合は従来どおりの幅で表示されます。<br>
+
+<img src="./images/SKM_ShopWindowClamp.png" width="400">
+
+■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopWindowClamp.js)
 
 
 
