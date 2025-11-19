@@ -56,6 +56,18 @@ http://woodpenguin.blog.fc2.com/<br>
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopWindowClamp.js)
 
 
+## オプション３（SKM_SoldOutFlag.js）
+
+プラグインコマンドをショップを開く直前に実行すると、<br>
+次に開くショップシーン限定で、メモ欄に <soldout> を含む商品を<br>
+「購入不可＋価格欄に任意のラベル表示」に変換します。<br>
+ショップ終了後は自動的に通常状態へ戻ります。<br>
+
+<img src="./images/SKM_SoldOutFlag.png" width="400">
+
+■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SoldOutFlag.js)
+
+
 
 ## 【更新履歴】
  - 1.0.0 初版
