@@ -1,4 +1,4 @@
-![Plugin Version](https://img.shields.io/badge/version-1.4.0-blue)
+![Plugin Version](https://img.shields.io/badge/version-1.4.1-blue)
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
