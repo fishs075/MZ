@@ -84,7 +84,7 @@ http://woodpenguin.blog.fc2.com/<br>
 このプラグインは、元となったプラグインがMITライセンスで配布しているため<br>
 このプラグインもMITライセンスの条件の下で利用可能とします。<br>
 <br>
-Copyright (c) 2023 Sakananomaeasi<br>
+Copyright (c) 2023 sakananomaeasi<br>
 Released under the MIT license<br>
 http://opensource.org/licenses/mit-license.php<br>
 <br>
