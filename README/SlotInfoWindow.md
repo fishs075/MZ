@@ -9,7 +9,6 @@
 プラグインを導入して有効化するだけで動作します。<br>
 <br>
 <img src="./images/SlotInfoWindow1.png" width="400">
-<img src="./images/SlotInfoWindow2.png" width="400">
 
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SlotInfoWindow.js)
 
