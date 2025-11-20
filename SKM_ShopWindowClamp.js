@@ -1,10 +1,14 @@
 //=============================================================================
-// SKM_ShopWindowClamp.js
+// SKM_ShopWindowClamp.js ver1.0.1
+//
+// Copyright (c) 2023 sakananomaeasi
+// Released under the MIT license
+// http://opensource.org/licenses/mit-license.php
 //=============================================================================
 /*:ja
  * @target MZ
- * @plugindesc ショップ画面のゴールドウィンドウ以外を任意の横幅に収める v1.0.0
- * @author GPT-5.1
+ * @plugindesc ショップ画面のゴールドウィンドウ以外を任意の横幅に収める v1.0.1
+ * @author sakananomaeasi with GPT-5.1
  *
  * @help
  * プラグインコマンドで「次に実行するショップの処理」だけ、
@@ -25,10 +29,21 @@
  *    メッセージとピクチャは同時に指定可能で、メッセージはピクチャより前面に表示されます。
  *
  * ▼備考
- * - helpウィンドウとゴールドウィンドウ以外が調整対象です。
- * - buy/sell/number/category/status/dummy/command/help各ウィンドウが調整対象です。
+ * - ゴールドウィンドウ以外が調整対象です。
  * - 空いたスペースには指定テキストやピクチャを表示できます。
  * - SKM_ShopScene_Ex.js等のショップ改造プラグインより下に配置してください。
+ *
+ * 
+ * ▼追記
+ * - 記述していないシーンテキストやピクチャはスキップされます（変化なし）
+ * 
+ * 
+ * @param defaultMessageSpeed
+ * @text メッセージ表示速度
+ * @type number
+ * @min 0
+ * @default 1
+ * @desc 0で即時表示。1以上で指定フレーム毎に1文字描画します。
  *
  * @command SetShopWidth
  * @text 次ショップの幅を指定
@@ -68,20 +83,153 @@
  * @default 0
  * @desc ピクチャの表示位置を下(+)上(-)へ補正します。
  *
+ * @arg entryText
+ * @text 入店時テキスト
+ * @type multiline_string
+ * @default
+ * @desc ショップ入店直後にイベント風に表示する挨拶テキスト。
+ * 
+ *
+ * @arg purchaseText
+ * @text 購入時表示テキスト
+ * @type multiline_string
+ * @default
+ * @desc 商品購入が成立した際に表示するテキスト。\\nで改行。
+ *
+ * @arg purchaseFailedText
+ * @text 購入エラー表示テキスト
+ * @type multiline_string
+ * @default
+ * @desc 所持金不足で購入できなかった際に表示するテキスト。\\nで改行。
+ *
+ * @arg exitText
+ * @text 退店時表示テキスト
+ * @type multiline_string
+ * @default
+ * @desc 退店時に表示するテキスト。設定時は自動で短時間表示してから退店します。\\nで改行。
+ *
+ * @arg exitTextDuration
+ * @text 退店テキスト表示フレーム
+ * @type number
+ * @min 0
+ * @default 45
+ * @desc 退店テキストを表示してからシーンを閉じるまでのフレーム数。0で即時終了。
+ *
+ * @arg soldOutSelectText
+ * @text 売り切れ選択時テキスト
+ * @type multiline_string
+ * @default
+ * @desc SKM_SoldOutFlagで売り切れ扱いのアイテムを選択したときに表示するテキスト。\\nで改行。
+ *
+ * @arg messageSpeed
+ * @text メッセージ速度
+ * @type number
+ * @min 0
+ * @default 
+ * @desc 0で即時表示。1以上で指定フレーム毎に1文字描画。未設定時はプラグインパラメータ値を使用。
+ *
+ * @arg actionPictures
+ * @text テキスト別ピクチャ設定
+ * @type struct<ActionPicture>[]
+ * @default []
+ * @desc 入店/購入などの各テキスト表示時に切り替えるピクチャを指定します。
+ * 
  * @command ClearShopWidth
  * @text 指定を解除
  * @desc 予約済みのショップ横幅・メッセージ・ピクチャの指定をキャンセルします。
+ */
+/*~struct~ActionPicture:ja
+ * @param type
+ * @text テキスト種別
+ * @type select
+ * @option 通常テキスト
+ * @value message
+ * @option 入店テキスト
+ * @value entry
+ * @option 購入成功
+ * @value purchase
+ * @option 購入失敗
+ * @value purchaseFailed
+ * @option 売り切れ
+ * @value soldOut
+ * @option 退店
+ * @value exit
+ * @default message
+ *
+ * @param picture
+ * @text ピクチャ名
+ * @type file
+ * @dir img/pictures/
+ * @default
+ *
+ * @param offsetX
+ * @text ピクチャXオフセット
+ * @type number
+ * @min -9999
+ * @max 9999
+ * @default 0
+ *
+ * @param offsetY
+ * @text ピクチャYオフセット
+ * @type number
+ * @min -9999
+ * @max 9999
+ * @default 0
  */
 (() => {
     "use strict";
 
     const pluginName = document.currentScript.src.match(/([^/\\]+)\.js$/)[1];
+    const pluginParams = PluginManager.parameters(pluginName);
 
     const normalizePictureName = name => {
         if (!name) return "";
         return String(name)
             .trim()
             .replace(/\.(png|jpg|jpeg)$/i, "");
+    };
+
+    const normalizeClampText = value => {
+        if (value == null) return "";
+        const text = String(value).replace(/\\n/g, "\n");
+        return text.trim().length > 0 ? text : "";
+    };
+
+    const SHOP_CLAMP_ACTION_TEXT_DURATION = 120;
+    const SHOP_CLAMP_EXIT_WAIT_DEFAULT = 60;
+    const DEFAULT_CLAMP_MESSAGE_SPEED = Math.max(0, Number(pluginParams.defaultMessageSpeed || 0));
+
+    const parseActionPictures = raw => {
+        if (!raw) return [];
+        let list;
+        try {
+            list = JSON.parse(raw);
+        } catch (e) {
+            return [];
+        }
+        if (!Array.isArray(list)) return [];
+        return list.map(item => {
+            if (!item) return null;
+            let data = item;
+            if (typeof item === "string") {
+                try {
+                    data = JSON.parse(item);
+                } catch (e) {
+                    return null;
+                }
+            }
+            if (!data || typeof data !== "object") return null;
+            const type = String(data.type || "").trim();
+            if (!type) return null;
+            const picture = normalizePictureName(data.picture);
+            if (!picture) return null;
+            return {
+                type,
+                picture,
+                offsetX: Number(data.offsetX || 0) || 0,
+                offsetY: Number(data.offsetY || 0) || 0
+            };
+        }).filter(Boolean);
     };
 
     class ShopWidthReservation {
@@ -91,9 +239,19 @@
                 this._pendingConfig = {
                     width: Number(config.width),
                     message: config.message || "",
+                    entryText: config.entryText || "",
                     picture: pictureName,
                     pictureOffsetX: Number(config.pictureOffsetX) || 0,
-                    pictureOffsetY: Number(config.pictureOffsetY) || 0
+                    pictureOffsetY: Number(config.pictureOffsetY) || 0,
+                    purchaseText: config.purchaseText || "",
+                    purchaseFailedText: config.purchaseFailedText || "",
+                    exitText: config.exitText || "",
+                    exitTextDuration: config.exitTextDuration,
+                    soldOutSelectText: config.soldOutSelectText || "",
+                    messageSpeed: config.messageSpeed,
+                    actionPictures: Array.isArray(config.actionPictures)
+                        ? config.actionPictures.map(entry => ({ ...entry }))
+                        : []
                 };
             } else {
                 this._pendingConfig = null;
@@ -113,8 +271,19 @@
 
     PluginManager.registerCommand(pluginName, "SetShopWidth", function(args) {
         const width = Number(args.width || 0);
-        const rawMessage = args.message != null ? String(args.message) : "";
-        const message = rawMessage.replace(/\\n/g, "\n");
+        const message = normalizeClampText(args.message);
+        const entryText = normalizeClampText(args.entryText);
+        const purchaseText = normalizeClampText(args.purchaseText);
+        const purchaseFailedText = normalizeClampText(args.purchaseFailedText);
+        const exitText = normalizeClampText(args.exitText);
+        const exitTextDuration = args.exitTextDuration !== undefined && args.exitTextDuration !== ""
+            ? Math.max(0, Number(args.exitTextDuration) || 0)
+            : null;
+        const soldOutSelectText = normalizeClampText(args.soldOutSelectText);
+        const actionPictures = parseActionPictures(args.actionPictures);
+        const messageSpeed = args.messageSpeed !== undefined && args.messageSpeed !== ""
+            ? Math.max(0, Number(args.messageSpeed) || 0)
+            : null;
         const picture = normalizePictureName(args.picture);
         const pictureOffsetX = Number(args.pictureOffsetX || 0) || 0;
         const pictureOffsetY = Number(args.pictureOffsetY || 0) || 0;
@@ -122,9 +291,18 @@
             this._shopWindowClampReservation = {
                 width,
                 message,
+                entryText,
                 picture,
                 pictureOffsetX,
-                pictureOffsetY
+                pictureOffsetY,
+                purchaseText,
+                purchaseFailedText,
+                exitText,
+                exitTextDuration,
+                soldOutSelectText,
+                entryText,
+                messageSpeed,
+                actionPictures
             };
         } else {
             this._shopWindowClampReservation = null;
@@ -154,12 +332,27 @@
         _Scene_Shop_prepare.call(this, goods, purchaseOnly);
         const config = ShopWidthReservation.consume();
         if (config) {
+            const exitDurationRaw = Number(config.exitTextDuration);
+            const hasExitDuration = config.exitTextDuration !== undefined && config.exitTextDuration !== null;
+            const exitTextDuration = hasExitDuration
+                ? Math.max(0, Number.isFinite(exitDurationRaw) ? exitDurationRaw : 0)
+                : SHOP_CLAMP_EXIT_WAIT_DEFAULT;
             this._shopWindowClamp = {
                 requestedWidth: Number(config.width) || 0,
                 message: config.message || "",
+                entryText: config.entryText || "",
                 picture: config.picture || "",
                 pictureOffsetX: Number(config.pictureOffsetX) || 0,
-                pictureOffsetY: Number(config.pictureOffsetY) || 0
+                pictureOffsetY: Number(config.pictureOffsetY) || 0,
+                purchaseText: config.purchaseText || "",
+                purchaseFailedText: config.purchaseFailedText || "",
+                exitText: config.exitText || "",
+                exitTextDuration,
+                soldOutSelectText: config.soldOutSelectText || "",
+                messageSpeed: (config.messageSpeed != null ? config.messageSpeed : DEFAULT_CLAMP_MESSAGE_SPEED),
+                actionPictures: Array.isArray(config.actionPictures)
+                    ? config.actionPictures.map(entry => ({ ...entry }))
+                    : []
             };
         } else {
             this._shopWindowClamp = null;
@@ -169,8 +362,16 @@
     const _Scene_Shop_create = Scene_Shop.prototype.create;
     Scene_Shop.prototype.create = function() {
         _Scene_Shop_create.call(this);
+        this._shopClampBaseMessage = this._shopWindowClamp ? (this._shopWindowClamp.message || "") : "";
+        this._shopClampActionResetTimer = 0;
+        this._shopClampExitDelayActive = false;
+        this._shopClampExitSkipDelay = false;
+        this._shopClampExitCountdown = 0;
         this.createClampPictureSprite();
         this.createClampMessageWindow();
+        if (this._shopWindowClamp && this._shopWindowClamp.entryText) {
+            this._shopClampShowActionText("entryText");
+        }
         this._shopClampRelayoutPartyWindows();
     };
 
@@ -220,10 +421,17 @@
     };
 
     Scene_Shop.prototype._shopClampHasMessage = function() {
-        return (
-            this._shopWindowClamp &&
-            typeof this._shopWindowClamp.message === "string" &&
-            this._shopWindowClamp.message.trim().length > 0
+        if (!this._shopWindowClamp) return false;
+        const sources = [
+            this._shopWindowClamp.message,
+            this._shopWindowClamp.entryText,
+            this._shopWindowClamp.purchaseText,
+            this._shopWindowClamp.purchaseFailedText,
+            this._shopWindowClamp.exitText,
+            this._shopWindowClamp.soldOutSelectText
+        ];
+        return sources.some(
+            text => typeof text === "string" && text.trim().length > 0
         );
     };
 
@@ -242,16 +450,49 @@
         if (messageWidth <= 0 || messageHeight <= 0) return;
         const rect = this._shopClampMessageRect(messageWidth);
         this._clampMessageWindow = new Window_ShopClampMessage(rect);
-        this._clampMessageWindow.setText(this._shopWindowClamp.message);
+        const typingSpeed = this._shopWindowClamp && this._shopWindowClamp.messageSpeed != null
+            ? this._shopWindowClamp.messageSpeed
+            : DEFAULT_CLAMP_MESSAGE_SPEED;
+        this._clampMessageWindow.setTypingSpeed(typingSpeed);
+        this._shopClampBaseMessage = this._shopClampBaseMessage || this._shopWindowClamp.message || "";
+        this._clampMessageWindow.setText(this._shopClampBaseMessage);
+        this._shopClampApplyActionPicture("message");
+        this._shopClampActionResetTimer = 0;
         this.addWindow(this._clampMessageWindow);
     };
 
-    Scene_Shop.prototype._shopClampHasPicture = function() {
-        return (
-            this._shopWindowClamp &&
-            typeof this._shopWindowClamp.picture === "string" &&
-            this._shopWindowClamp.picture.trim().length > 0
-        );
+    Scene_Shop.prototype._shopClampShowActionText = function(key, options = {}) {
+        if (!this._clampMessageWindow || !this._shopWindowClamp) return;
+        const text = this._shopWindowClamp[key];
+        if (!text) return;
+        this._clampMessageWindow.setText(text);
+        this._shopClampApplyActionPicture(key);
+        const hold = !!options.hold;
+        if (hold) {
+            this._shopClampActionResetTimer = 0;
+        } else if (this._shopClampBaseMessage !== undefined) {
+            this._shopClampActionResetTimer = SHOP_CLAMP_ACTION_TEXT_DURATION;
+        }
+    };
+
+    Scene_Shop.prototype._shopClampUpdateActionText = function() {
+        if (!this._clampMessageWindow) return;
+        if (this._shopClampActionResetTimer > 0) {
+            this._shopClampActionResetTimer--;
+            if (this._shopClampActionResetTimer === 0) {
+                this._clampMessageWindow.setText(this._shopClampBaseMessage || "");
+                this._shopClampApplyActionPicture("message");
+            }
+        }
+    };
+
+    Scene_Shop.prototype._shopClampRequiresPictureSprite = function() {
+        if (!this._shopWindowClamp) return false;
+        const hasBase = typeof this._shopWindowClamp.picture === "string" &&
+            this._shopWindowClamp.picture.trim().length > 0;
+        const hasAction = Array.isArray(this._shopWindowClamp.actionPictures) &&
+            this._shopWindowClamp.actionPictures.some(entry => entry.picture);
+        return hasBase || hasAction;
     };
 
     Scene_Shop.prototype._shopClampPictureRect = function() {
@@ -268,26 +509,61 @@
     };
 
     Scene_Shop.prototype.createClampPictureSprite = function() {
-        if (!this._shopClampHasPicture()) return;
+        if (!this._shopClampRequiresPictureSprite()) return;
         const rect = this._shopClampPictureRect();
         if (!rect) return;
-        const pictureName = this._shopWindowClamp.picture.trim();
-        const bitmap = ImageManager.loadPicture(pictureName);
-        const sprite = new Sprite(bitmap);
-        sprite._clampRect = rect;
-        sprite._clampOffsetX = Number(this._shopWindowClamp.pictureOffsetX) || 0;
-        sprite._clampOffsetY = Number(this._shopWindowClamp.pictureOffsetY) || 0;
+        this._shopClampPictureRectCache = rect;
+        const sprite = new Sprite();
+        sprite.visible = false;
         this._clampPictureSprite = sprite;
         const windowLayerIndex = this.getChildIndex(this._windowLayer);
         const insertIndex = windowLayerIndex >= 0 ? windowLayerIndex : this.children.length;
         this.addChildAt(sprite, insertIndex);
-        bitmap.addLoadListener(() => {
-            this._positionClampPictureSprite(sprite, rect);
-        });
+        this._shopClampBasePicture = this._shopClampHasBasePicture()
+            ? {
+                  type: "message",
+                  picture: this._shopWindowClamp.picture.trim(),
+                  offsetX: Number(this._shopWindowClamp.pictureOffsetX) || 0,
+                  offsetY: Number(this._shopWindowClamp.pictureOffsetY) || 0
+              }
+            : null;
+        this._shopClampApplyPicture(this._shopClampBasePicture);
     };
 
-    Scene_Shop.prototype._positionClampPictureSprite = function(sprite, rect) {
-        const bitmap = sprite.bitmap;
+    Scene_Shop.prototype._shopClampHasBasePicture = function() {
+        return !!(
+            this._shopWindowClamp &&
+            typeof this._shopWindowClamp.picture === "string" &&
+            this._shopWindowClamp.picture.trim().length > 0
+        );
+    };
+
+    Scene_Shop.prototype._shopClampApplyPicture = function(pictureData) {
+        const sprite = this._clampPictureSprite;
+        if (!sprite) return;
+        if (!pictureData || !pictureData.picture) {
+            sprite.visible = false;
+            sprite.bitmap = null;
+            this._shopClampCurrentPicture = null;
+            return;
+        }
+        const rect = this._shopClampPictureRectCache;
+        if (!rect) return;
+        const bitmap = ImageManager.loadPicture(pictureData.picture);
+        const applyPosition = () => {
+            sprite.bitmap = bitmap;
+            sprite.visible = true;
+            this._positionClampPictureSprite(sprite, rect, bitmap, pictureData.offsetX || 0, pictureData.offsetY || 0);
+        };
+        if (bitmap.isReady()) {
+            applyPosition();
+        } else {
+            bitmap.addLoadListener(applyPosition);
+        }
+        this._shopClampCurrentPicture = pictureData;
+    };
+
+    Scene_Shop.prototype._positionClampPictureSprite = function(sprite, rect, bitmap, offsetX, offsetY) {
         if (!bitmap || bitmap.width <= 0 || bitmap.height <= 0) return;
         let scale = 1;
         if (rect.width > 0 && bitmap.width > rect.width) {
@@ -296,10 +572,45 @@
         sprite.scale.x = sprite.scale.y = scale;
         const drawWidth = bitmap.width * scale;
         const drawHeight = bitmap.height * scale;
-        const offsetX = sprite._clampOffsetX || 0;
-        const offsetY = sprite._clampOffsetY || 0;
         sprite.x = rect.x + (rect.width - drawWidth) / 2 + offsetX;
         sprite.y = rect.y + (rect.height - drawHeight) / 2 + offsetY;
+    };
+
+    Scene_Shop.prototype._shopClampFindActionPicture = function(actionType) {
+        if (!actionType || !this._shopWindowClamp || !Array.isArray(this._shopWindowClamp.actionPictures)) {
+            return null;
+        }
+        return this._shopWindowClamp.actionPictures.find(entry => entry.type === actionType && entry.picture);
+    };
+
+    Scene_Shop.prototype._shopClampActionTypeForKey = function(key) {
+        switch (key) {
+            case "message":
+                return "message";
+            case "entryText":
+                return "entry";
+            case "purchaseText":
+                return "purchase";
+            case "purchaseFailedText":
+                return "purchaseFailed";
+            case "soldOutSelectText":
+                return "soldOut";
+            case "exitText":
+                return "exit";
+            default:
+                return null;
+        }
+    };
+
+    Scene_Shop.prototype._shopClampApplyActionPicture = function(key) {
+        if (!this._clampPictureSprite) return;
+        const actionType = this._shopClampActionTypeForKey(key);
+        const entry = this._shopClampFindActionPicture(actionType);
+        if (entry) {
+            this._shopClampApplyPicture(entry);
+        } else {
+            this._shopClampApplyPicture(this._shopClampBasePicture);
+        }
     };
 
     const _Scene_Shop_helpWindowRect =
@@ -421,6 +732,77 @@
 
     };
 
+    const _Scene_Shop_doBuy = Scene_Shop.prototype.doBuy;
+    Scene_Shop.prototype.doBuy = function(number) {
+        _Scene_Shop_doBuy.call(this, number);
+        this._shopClampShowActionText("purchaseText");
+    };
+
+    Scene_Shop.prototype._shopClampIsSoldOutItem = function(item) {
+        if (!item || !item.meta) return false;
+        const hasTag = item.meta.soldout || item.meta.SOLDOUT;
+        if (!hasTag) return false;
+        if (this._buyWindow && this._buyWindow.isEnabled && this._buyWindow.isEnabled(item)) {
+            return false;
+        }
+        return true;
+    };
+
+    Scene_Shop.prototype._shopClampHandleFailedPurchase = function(item) {
+        if (!this._shopWindowClamp) return;
+        if (this._shopClampIsSoldOutItem(item) && this._shopWindowClamp.soldOutSelectText) {
+            this._shopClampShowActionText("soldOutSelectText");
+        } else {
+            this._shopClampShowActionText("purchaseFailedText");
+        }
+    };
+
+    const _Scene_Shop_update = Scene_Shop.prototype.update;
+    Scene_Shop.prototype.update = function() {
+        _Scene_Shop_update.call(this);
+        this._shopClampUpdateExitDelay();
+        this._shopClampUpdateActionText();
+    };
+
+    const _Scene_Shop_popScene = Scene_Shop.prototype.popScene;
+    Scene_Shop.prototype.popScene = function() {
+        if (this._shopClampHandleExitDelay()) return;
+        _Scene_Shop_popScene.call(this);
+    };
+
+    Scene_Shop.prototype._shopClampHandleExitDelay = function() {
+        if (!this._shopWindowClamp || !this._shopWindowClamp.exitText) return false;
+        if (!this._clampMessageWindow) return false;
+        if (this._shopClampExitSkipDelay) return false;
+        if (this._shopClampExitDelayActive) return true;
+        const duration = Math.max(
+            0,
+            Number.isFinite(this._shopWindowClamp.exitTextDuration)
+                ? this._shopWindowClamp.exitTextDuration
+                : SHOP_CLAMP_EXIT_WAIT_DEFAULT
+        );
+        if (duration <= 0) {
+            this._shopClampShowActionText("exitText", { hold: true });
+            return false;
+        }
+        this._shopClampShowActionText("exitText", { hold: true });
+        this._shopClampExitDelayActive = true;
+        this._shopClampExitCountdown = duration;
+        return true;
+    };
+
+    Scene_Shop.prototype._shopClampUpdateExitDelay = function() {
+        if (!this._shopClampExitDelayActive) return;
+        if (this._shopClampExitCountdown > 0) {
+            this._shopClampExitCountdown--;
+            if (this._shopClampExitCountdown <= 0) {
+                this._shopClampExitDelayActive = false;
+                this._shopClampExitSkipDelay = true;
+                this.popScene();
+            }
+        }
+    };
+
     //-----------------------------------------------------------------------------
     // Window_ShopClampMessage
     //-----------------------------------------------------------------------------
@@ -428,31 +810,42 @@
     function Window_ShopClampMessage(rect) {
         Window_Base.call(this, rect);
         this._text = "";
+        this._targetText = "";
+        this._typingSpeed = 0;
+        this._typingIndex = null;
+        this._typingTick = 0;
     }
 
     Window_ShopClampMessage.prototype = Object.create(Window_Base.prototype);
     Window_ShopClampMessage.prototype.constructor = Window_ShopClampMessage;
 
+    Window_ShopClampMessage.prototype.setTypingSpeed = function(speed) {
+        this._typingSpeed = Math.max(0, Number(speed) || 0);
+    };
+
     Window_ShopClampMessage.prototype.setText = function(text) {
         const next = text || "";
-        if (this._text === next) return;
-        this._text = next;
-        this.refresh();
+        this._targetText = next;
+        if (this._typingSpeed > 0 && next) {
+            this._startTyping();
+        } else {
+            this._typingIndex = null;
+            this._typingTick = 0;
+            this._renderFullText(next);
+        }
     };
 
     Window_ShopClampMessage.prototype.refresh = function() {
         this.contents.clear();
         if (!this._text) return;
         this.resetFontSettings();
-        const rect = this.baseTextRect
-            ? this.baseTextRect()
-            : new Rectangle(
-                  this.textPadding(),
-                  0,
-                  this.contentsWidth(),
-                  this.contentsHeight()
-              );
+        const rect = this._baseTextRect();
         this.drawTextEx(this._text, rect.x, rect.y, rect.width);
+    };
+
+    Window_ShopClampMessage.prototype.update = function() {
+        Window_Base.prototype.update.call(this);
+        this._updateTyping();
     };
 
     Window_ShopClampMessage.prototype.processCharacter = function(textState) {
@@ -532,6 +925,69 @@
         const code = this.obtainEscapeCode(textState);
         textState.index = savedIndex;
         return code;
+    };
+
+    Window_ShopClampMessage.prototype._baseTextRect = function() {
+        return this.baseTextRect
+            ? this.baseTextRect()
+            : new Rectangle(
+                  this.textPadding(),
+                  0,
+                  this.contentsWidth(),
+                  this.contentsHeight()
+              );
+    };
+
+    Window_ShopClampMessage.prototype._renderFullText = function(text) {
+        this._text = text || "";
+        this.contents.clear();
+        if (!this._text) return;
+        this.resetFontSettings();
+        const rect = this._baseTextRect();
+        this.drawTextEx(this._text, rect.x, rect.y, rect.width);
+    };
+
+    Window_ShopClampMessage.prototype._startTyping = function() {
+        this.contents.clear();
+        this.resetFontSettings();
+        this._text = "";
+        this._typingIndex = 0;
+        this._typingTick = 0;
+        this._renderFullText("");
+    };
+
+    Window_ShopClampMessage.prototype._updateTyping = function() {
+        if (this._typingIndex === null || !this._targetText) return;
+        const speed = Math.max(1, this._typingSpeed);
+        this._typingTick += 1;
+        let updated = false;
+        while (this._typingTick >= speed && this._typingIndex < this._targetText.length) {
+            this._typingTick -= speed;
+            this._typingIndex++;
+            const partial = this._targetText.slice(0, this._typingIndex);
+            this._renderFullText(partial);
+            updated = true;
+        }
+        if (this._typingIndex >= this._targetText.length) {
+            this._typingIndex = null;
+            this._typingTick = 0;
+            if (!updated) {
+                this._renderFullText(this._targetText);
+            }
+        }
+    };
+
+    const _Window_ShopBuy_processOk = Window_ShopBuy.prototype.processOk;
+    Window_ShopBuy.prototype.processOk = function() {
+        const enabled = this.isCurrentItemEnabled();
+        const item = this.item();
+        _Window_ShopBuy_processOk.call(this);
+        if (!enabled) {
+            const scene = SceneManager._scene;
+            if (scene && typeof scene._shopClampHandleFailedPurchase === "function") {
+                scene._shopClampHandleFailedPurchase(item);
+            }
+        }
     };
 })();
 
