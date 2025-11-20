@@ -229,7 +229,7 @@
  * @text ステータス表示ルール
  * @desc 装備アイテムのステータス表示ルールを設定します。
  * @type struct<ParamsList>
- * @default {"default":"2-7","fixed":"","included":"0-7,10-19,20-29","changed":"0-7,10-19,20-29"}
+ * @default {"default":"","fixed":"","included":"0-7,10-19,20-29","changed":"0-7,10-19,20-29"}
  * 
  * @param reverseRateDisplay
  * @text 有効度反転表示
@@ -620,7 +620,7 @@
  *  @param default
  *      @text 通常
  *      @desc 装備スロット選択中に表示されるステータス
- *      @default 2-7
+ *      @default 
  * 
  *  @param fixed
  *      @text 固定
