@@ -52,7 +52,7 @@ http://woodpenguin.blog.fc2.com/<br>
 また、開けた部分にピクチャやテキストメッセージを表示することもできます<br>
 
 <img src="./images/SKM_ShopWindowClamp.png" width="400">
-<video src="./images/SKM_ShopWindowClamp.mp4" width="400"　controls></video>
+<video src="./images/SKM_ShopWindowClamp.mp4" controls></video>
 
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopWindowClamp.js)
 
