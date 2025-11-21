@@ -13,7 +13,8 @@
 | アクターカードスタイル | https://github.com/fishs075/MZ/blob/main/README/SKM_ActorCardStyle.md |
 | メニュー画面サイズ調整 | https://github.com/fishs075/MZ/blob/main/README/MenuScenesResize.md |
 | 装備画面パーティ選択 | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipPartySelect.md |
-
+| アイテム選択時装備情報表示 | https://github.com/fishs075/MZ/blob/main/README/SKM_EquipinfoWindow.md |
+| ショップ拡張（＋オプション） | https://github.com/fishs075/MZ/blob/main/README/SKM_ShopScene_Ex.md |
 
 ## MVより移植
 | ドキュメント | リンク |
