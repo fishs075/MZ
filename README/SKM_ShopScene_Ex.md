@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
 
-# SKM_ShopScene_Ex.js
+# ショップシーン拡張 (SKM_ShopScene_Ex.js)
 
 このプラグインは<br>
 うなぎおおとろさんのショップ画面拡張 ShopScene_Extension.js<br>

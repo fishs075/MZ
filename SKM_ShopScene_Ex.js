@@ -10,7 +10,6 @@
 // Released under the MIT license
 // https://raw.githubusercontent.com/unagiootoro/RPGMZ/refs/heads/master/LICENSE
 //
-//
 // ------------------------------------------------------
 // Copyright (c) 2016 Yana
 // Released under the MIT license
@@ -23,7 +22,7 @@
 //=============================================================================
 /*:ja
  * @target MZ
- * @plugindesc ショップ画面拡張 v1.4.0
+ * @plugindesc ショップシーン拡張 v1.4.1
  * @author さかなのまえあし
  * @url 
  * 
