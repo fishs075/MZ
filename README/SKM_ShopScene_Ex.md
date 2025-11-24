@@ -63,7 +63,7 @@ http://woodpenguin.blog.fc2.com/<br>
 
 
 
-## オプション１（ShopPartySelect.js）
+## オプション１（SKM_ShopPartySelect.js）
 
 ショップ画面のステータス上部に、パーティ人数分の簡易アイコン（顔/歩行/SV）を<br>
 横並びで表示する選択ウィンドウを追加します。クリック/タップで<br>
@@ -74,10 +74,12 @@ http://woodpenguin.blog.fc2.com/<br>
 売却モード中は、パーティ選択ウィンドウを自動で非表示にします。<br>
 <br>
 プラグインコマンドはありません。<br>
-
+<br>
+単体でも装備品にシンボルを表示するようにしました<br>
+<br>
 <img src="./images/ShopPartySelect.png" width="400">
 
-■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/ShopPartySelect.js)
+■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ShopPartySelect.js)
 
 
 
@@ -87,6 +89,7 @@ http://woodpenguin.blog.fc2.com/<br>
 ゴールドウィンドウ以外の各ウィンドウを指定した横幅に収めます。<br>
 プラグインコマンドを実行しなかった場合は従来どおりの幅で表示されます。<br>
 また、開けた部分にピクチャやテキストメッセージを表示することもできます<br>
+また店内で起こしたアクション（入店/退店/購入など）に対してテキストやイラストを変化させることができます<br>
 
 <img src="./images/SKM_ShopWindowClamp.png" width="400">
 
