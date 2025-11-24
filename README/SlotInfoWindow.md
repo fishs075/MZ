@@ -2,7 +2,7 @@
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
-# 今何装備してるの？プラグイン（SlotInfoWindow.js）
+# 装備シーン、アイテム選択時装備情報表示（SlotInfoWindow.js）
 
 このプラグインは、装備画面でアイテム選択ウィンドウが表示されている間、<br>
 選択中の装備部位と現在装備しているアイテムを別ウィンドウで表示します。<br>

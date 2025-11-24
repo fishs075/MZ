@@ -1,6 +1,5 @@
 //=============================================================================
-// SlotInfoWindow.js
-// 装備画面のアイテム選択時に部位と装備を表示する情報ウィンドウを追加します。v1.0.0
+// 装備シーン、アイテム選択時装備情報表示(SlotInfoWindow.js)
 //
 // Copyright (c) 2025 sakananomaeasi
 // Released under the MIT license
