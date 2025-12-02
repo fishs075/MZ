@@ -114,6 +114,32 @@ https://github.com/user-attachments/assets/97bee934-857a-4fec-93a0-4afec0801234
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_SoldOutFlag.js)
 
 
+## オプション４(SKM_NextRandomShop.js)
+
+
+次に開くショップの
+イベント内で「次のショップをランダム化」を実行すると、<br>
+次の「ショップの処理」で販売リストから指定数だけを抽選します。<br>
+<br>
+さらに、以下のリセット条件を任意に組み合わせて設定できます。<br>
+ ・累計購入額が一定を超える
+ ・戦闘回数が一定に達する
+ ・所定のゴールドを支払って手動リフレッシュ
+
+いずれも0のままなら従来通り「次のショップ1回だけ」適用されます。<br>
+<br>
+【基本的な流れ】<br>
+1. 「次のショップをランダム化」で抽選数とリセット条件を設定
+2. 「ショップID」を指定。指定しない場合通常のショップに影響あり。
+3. 続けてイベントコマンド「ショップの処理」を実行
+4. 同じ条件を満たすまで抽選内容は固定
+5. 条件を満たしたら再び「次のショップをランダム化」で新しい在庫を生成
+
+
+
+
+
+■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_NextRandomShop.js)
 
 ## 【更新履歴】
  - 1.0.0 初版
