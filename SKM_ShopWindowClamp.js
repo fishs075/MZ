@@ -27,6 +27,8 @@
  * 6. ピクチャ名を指定すると、同じスペースにピクチャを自動配置します（img/pictures/）。
  *    X/Yオフセットを指定すると、表示位置を任意にずらせます（単位: ピクセル）。
  *    メッセージとピクチャは同時に指定可能で、メッセージはピクチャより前面に表示されます。
+ * 7. SKM_NextRandomShop.js と併用すると、在庫リフレッシュ直後
+ *    最初の入店時だけ専用のテキスト／ピクチャを表示できます。
  *
  * ▼備考
  * - ゴールドウィンドウ以外が調整対象です。
@@ -83,31 +85,12 @@
  * @default 0
  * @desc ピクチャの表示位置を下(+)上(-)へ補正します。
  *
- * @arg entryText
- * @text 入店時テキスト
- * @type multiline_string
- * @default
- * @desc ショップ入店直後にイベント風に表示する挨拶テキスト。
+ * @arg actionPictures
+ * @text テキスト別ピクチャ設定
+ * @type struct<ActionPicture>[]
+ * @default []
+ * @desc 入店/購入などの各テキスト表示時に切り替えるピクチャを指定します。
  * 
- *
- * @arg purchaseText
- * @text 購入時表示テキスト
- * @type multiline_string
- * @default
- * @desc 商品購入が成立した際に表示するテキスト。\\nで改行。
- *
- * @arg purchaseFailedText
- * @text 購入エラー表示テキスト
- * @type multiline_string
- * @default
- * @desc 所持金不足で購入できなかった際に表示するテキスト。\\nで改行。
- *
- * @arg exitText
- * @text 退店時表示テキスト
- * @type multiline_string
- * @default
- * @desc 退店時に表示するテキスト。設定時は自動で短時間表示してから退店します。\\nで改行。
- *
  * @arg exitTextDuration
  * @text 退店テキスト表示フレーム
  * @type number
@@ -115,11 +98,6 @@
  * @default 45
  * @desc 退店テキストを表示してからシーンを閉じるまでのフレーム数。0で即時終了。
  *
- * @arg soldOutSelectText
- * @text 売り切れ選択時テキスト
- * @type multiline_string
- * @default
- * @desc SKM_SoldOutFlagで売り切れ扱いのアイテムを選択したときに表示するテキスト。\\nで改行。
  *
  * @arg messageSpeed
  * @text メッセージ速度
@@ -128,11 +106,6 @@
  * @default 
  * @desc 0で即時表示。1以上で指定フレーム毎に1文字描画。未設定時はプラグインパラメータ値を使用。
  *
- * @arg actionPictures
- * @text テキスト別ピクチャ設定
- * @type struct<ActionPicture>[]
- * @default []
- * @desc 入店/購入などの各テキスト表示時に切り替えるピクチャを指定します。
  * 
  * @command ClearShopWidth
  * @text 指定を解除
@@ -146,6 +119,8 @@
  * @value message
  * @option 入店テキスト
  * @value entry
+ * @option リフレッシュ入店
+ * @value refreshEntry
  * @option 購入成功
  * @value purchase
  * @option 購入失敗
@@ -155,6 +130,12 @@
  * @option 退店
  * @value exit
  * @default message
+ *
+ * @param text
+ * @text 表示テキスト
+ * @type multiline_string
+ * @default
+ * @desc 空欄でテキスト非表示。\\nで改行。
  *
  * @param picture
  * @text ピクチャ名
@@ -221,10 +202,13 @@
             if (!data || typeof data !== "object") return null;
             const type = String(data.type || "").trim();
             if (!type) return null;
+            const text = normalizeClampText(data.text);
             const picture = normalizePictureName(data.picture);
-            if (!picture) return null;
+            const hasContent = text.length > 0 || picture.length > 0;
+            if (!hasContent) return null;
             return {
                 type,
+                text,
                 picture,
                 offsetX: Number(data.offsetX || 0) || 0,
                 offsetY: Number(data.offsetY || 0) || 0
@@ -239,15 +223,10 @@
                 this._pendingConfig = {
                     width: Number(config.width),
                     message: config.message || "",
-                    entryText: config.entryText || "",
                     picture: pictureName,
                     pictureOffsetX: Number(config.pictureOffsetX) || 0,
                     pictureOffsetY: Number(config.pictureOffsetY) || 0,
-                    purchaseText: config.purchaseText || "",
-                    purchaseFailedText: config.purchaseFailedText || "",
-                    exitText: config.exitText || "",
                     exitTextDuration: config.exitTextDuration,
-                    soldOutSelectText: config.soldOutSelectText || "",
                     messageSpeed: config.messageSpeed,
                     actionPictures: Array.isArray(config.actionPictures)
                         ? config.actionPictures.map(entry => ({ ...entry }))
@@ -272,14 +251,9 @@
     PluginManager.registerCommand(pluginName, "SetShopWidth", function(args) {
         const width = Number(args.width || 0);
         const message = normalizeClampText(args.message);
-        const entryText = normalizeClampText(args.entryText);
-        const purchaseText = normalizeClampText(args.purchaseText);
-        const purchaseFailedText = normalizeClampText(args.purchaseFailedText);
-        const exitText = normalizeClampText(args.exitText);
         const exitTextDuration = args.exitTextDuration !== undefined && args.exitTextDuration !== ""
             ? Math.max(0, Number(args.exitTextDuration) || 0)
             : null;
-        const soldOutSelectText = normalizeClampText(args.soldOutSelectText);
         const actionPictures = parseActionPictures(args.actionPictures);
         const messageSpeed = args.messageSpeed !== undefined && args.messageSpeed !== ""
             ? Math.max(0, Number(args.messageSpeed) || 0)
@@ -291,16 +265,10 @@
             this._shopWindowClampReservation = {
                 width,
                 message,
-                entryText,
                 picture,
                 pictureOffsetX,
                 pictureOffsetY,
-                purchaseText,
-                purchaseFailedText,
-                exitText,
                 exitTextDuration,
-                soldOutSelectText,
-                entryText,
                 messageSpeed,
                 actionPictures
             };
@@ -337,25 +305,46 @@
             const exitTextDuration = hasExitDuration
                 ? Math.max(0, Number.isFinite(exitDurationRaw) ? exitDurationRaw : 0)
                 : SHOP_CLAMP_EXIT_WAIT_DEFAULT;
+            const actionEntries = {};
+            const ensureActionEntry = type => {
+                if (!type) return null;
+                if (!actionEntries[type]) {
+                    actionEntries[type] = { text: "", pictureData: null };
+                }
+                return actionEntries[type];
+            };
+            const actionPictureList = Array.isArray(config.actionPictures) ? config.actionPictures : [];
+            actionPictureList.forEach(entry => {
+                if (!entry || !entry.type) return;
+                const target = ensureActionEntry(entry.type);
+                if (!target) return;
+                if (entry.text && entry.text.length > 0) {
+                    target.text = entry.text;
+                }
+                if (entry.picture && entry.picture.length > 0) {
+                    target.pictureData = {
+                        picture: entry.picture,
+                        offsetX: Number(entry.offsetX) || 0,
+                        offsetY: Number(entry.offsetY) || 0
+                    };
+                }
+            });
+
             this._shopWindowClamp = {
                 requestedWidth: Number(config.width) || 0,
                 message: config.message || "",
-                entryText: config.entryText || "",
                 picture: config.picture || "",
                 pictureOffsetX: Number(config.pictureOffsetX) || 0,
                 pictureOffsetY: Number(config.pictureOffsetY) || 0,
-                purchaseText: config.purchaseText || "",
-                purchaseFailedText: config.purchaseFailedText || "",
-                exitText: config.exitText || "",
                 exitTextDuration,
-                soldOutSelectText: config.soldOutSelectText || "",
                 messageSpeed: (config.messageSpeed != null ? config.messageSpeed : DEFAULT_CLAMP_MESSAGE_SPEED),
-                actionPictures: Array.isArray(config.actionPictures)
-                    ? config.actionPictures.map(entry => ({ ...entry }))
-                    : []
+                actionEntries
             };
+            const hasFreshContent = this._shopClampHasActionContent("refreshEntry");
+            this._shopClampFreshEntry = !!this._skmRandomShopFreshEntry && hasFreshContent;
         } else {
             this._shopWindowClamp = null;
+            this._shopClampFreshEntry = false;
         }
     };
 
@@ -369,8 +358,12 @@
         this._shopClampExitCountdown = 0;
         this.createClampPictureSprite();
         this.createClampMessageWindow();
-        if (this._shopWindowClamp && this._shopWindowClamp.entryText) {
-            this._shopClampShowActionText("entryText");
+        if (this._shopWindowClamp) {
+            if (this._shopClampFreshEntry && this._shopClampHasActionContent("refreshEntry")) {
+                this._shopClampShowActionByType("refreshEntry");
+            } else if (this._shopClampHasActionContent("entry")) {
+                this._shopClampShowActionByType("entry");
+            }
         }
         this._shopClampRelayoutPartyWindows();
     };
@@ -422,16 +415,13 @@
 
     Scene_Shop.prototype._shopClampHasMessage = function() {
         if (!this._shopWindowClamp) return false;
-        const sources = [
-            this._shopWindowClamp.message,
-            this._shopWindowClamp.entryText,
-            this._shopWindowClamp.purchaseText,
-            this._shopWindowClamp.purchaseFailedText,
-            this._shopWindowClamp.exitText,
-            this._shopWindowClamp.soldOutSelectText
-        ];
-        return sources.some(
-            text => typeof text === "string" && text.trim().length > 0
+        const baseMessage = this._shopWindowClamp.message;
+        const hasBaseMessage =
+            typeof baseMessage === "string" && baseMessage.trim().length > 0;
+        if (hasBaseMessage) return true;
+        const actionEntries = this._shopWindowClamp.actionEntries || {};
+        return Object.values(actionEntries).some(
+            entry => entry && entry.text && entry.text.length > 0
         );
     };
 
@@ -456,17 +446,34 @@
         this._clampMessageWindow.setTypingSpeed(typingSpeed);
         this._shopClampBaseMessage = this._shopClampBaseMessage || this._shopWindowClamp.message || "";
         this._clampMessageWindow.setText(this._shopClampBaseMessage);
-        this._shopClampApplyActionPicture("message");
+        this._shopClampApplyMessagePicture();
         this._shopClampActionResetTimer = 0;
         this.addWindow(this._clampMessageWindow);
     };
 
-    Scene_Shop.prototype._shopClampShowActionText = function(key, options = {}) {
-        if (!this._clampMessageWindow || !this._shopWindowClamp) return;
-        const text = this._shopWindowClamp[key];
-        if (!text) return;
-        this._clampMessageWindow.setText(text);
-        this._shopClampApplyActionPicture(key);
+    Scene_Shop.prototype._shopClampShowActionByType = function(actionType, options = {}) {
+        if (!this._shopWindowClamp) return;
+        const entry = this._shopClampGetActionEntry(actionType);
+        const messageWindow = this._clampMessageWindow;
+        const textSource =
+            options.textOverride !== undefined
+                ? options.textOverride
+                : entry && entry.text ? entry.text : "";
+        const pictureOverride =
+            options.pictureData && options.pictureData.picture ? options.pictureData : null;
+        const hasText = !!(messageWindow && textSource && textSource.length > 0);
+        const pictureData = pictureOverride || (entry && entry.pictureData);
+        if (!hasText && !pictureData) {
+            return;
+        }
+        if (hasText) {
+            messageWindow.setText(textSource);
+        }
+        if (pictureData) {
+            this._shopClampApplyPicture(pictureData);
+        } else if (hasText) {
+            this._shopClampApplyMessagePicture();
+        }
         const hold = !!options.hold;
         if (hold) {
             this._shopClampActionResetTimer = 0;
@@ -476,12 +483,13 @@
     };
 
     Scene_Shop.prototype._shopClampUpdateActionText = function() {
-        if (!this._clampMessageWindow) return;
         if (this._shopClampActionResetTimer > 0) {
             this._shopClampActionResetTimer--;
             if (this._shopClampActionResetTimer === 0) {
-                this._clampMessageWindow.setText(this._shopClampBaseMessage || "");
-                this._shopClampApplyActionPicture("message");
+                if (this._clampMessageWindow) {
+                    this._clampMessageWindow.setText(this._shopClampBaseMessage || "");
+                }
+                this._shopClampApplyMessagePicture();
             }
         }
     };
@@ -490,9 +498,12 @@
         if (!this._shopWindowClamp) return false;
         const hasBase = typeof this._shopWindowClamp.picture === "string" &&
             this._shopWindowClamp.picture.trim().length > 0;
-        const hasAction = Array.isArray(this._shopWindowClamp.actionPictures) &&
-            this._shopWindowClamp.actionPictures.some(entry => entry.picture);
-        return hasBase || hasAction;
+        const hasActionPicture =
+            this._shopWindowClamp.actionEntries &&
+            Object.values(this._shopWindowClamp.actionEntries).some(
+                entry => entry && entry.pictureData && entry.pictureData.picture
+            );
+        return hasBase || hasActionPicture;
     };
 
     Scene_Shop.prototype._shopClampPictureRect = function() {
@@ -527,7 +538,7 @@
                   offsetY: Number(this._shopWindowClamp.pictureOffsetY) || 0
               }
             : null;
-        this._shopClampApplyPicture(this._shopClampBasePicture);
+        this._shopClampApplyMessagePicture();
     };
 
     Scene_Shop.prototype._shopClampHasBasePicture = function() {
@@ -536,6 +547,35 @@
             typeof this._shopWindowClamp.picture === "string" &&
             this._shopWindowClamp.picture.trim().length > 0
         );
+    };
+
+    Scene_Shop.prototype._shopClampGetActionEntry = function(actionType) {
+        if (!this._shopWindowClamp || !this._shopWindowClamp.actionEntries) return null;
+        return this._shopWindowClamp.actionEntries[actionType] || null;
+    };
+
+    Scene_Shop.prototype._shopClampHasActionContent = function(actionType) {
+        const entry = this._shopClampGetActionEntry(actionType);
+        if (!entry) return false;
+        return !!(
+            (entry.text && entry.text.length > 0) ||
+            (entry.pictureData && entry.pictureData.picture)
+        );
+    };
+
+    Scene_Shop.prototype._shopClampActionHasText = function(actionType) {
+        const entry = this._shopClampGetActionEntry(actionType);
+        return !!(entry && entry.text && entry.text.length > 0);
+    };
+
+    Scene_Shop.prototype._shopClampApplyMessagePicture = function() {
+        if (!this._clampPictureSprite) return;
+        const messageEntry = this._shopClampGetActionEntry("message");
+        if (messageEntry && messageEntry.pictureData) {
+            this._shopClampApplyPicture(messageEntry.pictureData);
+        } else {
+            this._shopClampApplyPicture(this._shopClampBasePicture);
+        }
     };
 
     Scene_Shop.prototype._shopClampApplyPicture = function(pictureData) {
@@ -574,43 +614,6 @@
         const drawHeight = bitmap.height * scale;
         sprite.x = rect.x + (rect.width - drawWidth) / 2 + offsetX;
         sprite.y = rect.y + (rect.height - drawHeight) / 2 + offsetY;
-    };
-
-    Scene_Shop.prototype._shopClampFindActionPicture = function(actionType) {
-        if (!actionType || !this._shopWindowClamp || !Array.isArray(this._shopWindowClamp.actionPictures)) {
-            return null;
-        }
-        return this._shopWindowClamp.actionPictures.find(entry => entry.type === actionType && entry.picture);
-    };
-
-    Scene_Shop.prototype._shopClampActionTypeForKey = function(key) {
-        switch (key) {
-            case "message":
-                return "message";
-            case "entryText":
-                return "entry";
-            case "purchaseText":
-                return "purchase";
-            case "purchaseFailedText":
-                return "purchaseFailed";
-            case "soldOutSelectText":
-                return "soldOut";
-            case "exitText":
-                return "exit";
-            default:
-                return null;
-        }
-    };
-
-    Scene_Shop.prototype._shopClampApplyActionPicture = function(key) {
-        if (!this._clampPictureSprite) return;
-        const actionType = this._shopClampActionTypeForKey(key);
-        const entry = this._shopClampFindActionPicture(actionType);
-        if (entry) {
-            this._shopClampApplyPicture(entry);
-        } else {
-            this._shopClampApplyPicture(this._shopClampBasePicture);
-        }
     };
 
     const _Scene_Shop_helpWindowRect =
@@ -735,7 +738,7 @@
     const _Scene_Shop_doBuy = Scene_Shop.prototype.doBuy;
     Scene_Shop.prototype.doBuy = function(number) {
         _Scene_Shop_doBuy.call(this, number);
-        this._shopClampShowActionText("purchaseText");
+        this._shopClampShowActionByType("purchase");
     };
 
     Scene_Shop.prototype._shopClampIsSoldOutItem = function(item) {
@@ -750,10 +753,10 @@
 
     Scene_Shop.prototype._shopClampHandleFailedPurchase = function(item) {
         if (!this._shopWindowClamp) return;
-        if (this._shopClampIsSoldOutItem(item) && this._shopWindowClamp.soldOutSelectText) {
-            this._shopClampShowActionText("soldOutSelectText");
+        if (this._shopClampIsSoldOutItem(item) && this._shopClampHasActionContent("soldOut")) {
+            this._shopClampShowActionByType("soldOut");
         } else {
-            this._shopClampShowActionText("purchaseFailedText");
+            this._shopClampShowActionByType("purchaseFailed");
         }
     };
 
@@ -771,8 +774,9 @@
     };
 
     Scene_Shop.prototype._shopClampHandleExitDelay = function() {
-        if (!this._shopWindowClamp || !this._shopWindowClamp.exitText) return false;
+        if (!this._shopWindowClamp) return false;
         if (!this._clampMessageWindow) return false;
+        if (!this._shopClampActionHasText("exit")) return false;
         if (this._shopClampExitSkipDelay) return false;
         if (this._shopClampExitDelayActive) return true;
         const duration = Math.max(
@@ -781,11 +785,10 @@
                 ? this._shopWindowClamp.exitTextDuration
                 : SHOP_CLAMP_EXIT_WAIT_DEFAULT
         );
+        this._shopClampShowActionByType("exit", { hold: true });
         if (duration <= 0) {
-            this._shopClampShowActionText("exitText", { hold: true });
             return false;
         }
-        this._shopClampShowActionText("exitText", { hold: true });
         this._shopClampExitDelayActive = true;
         this._shopClampExitCountdown = duration;
         return true;
