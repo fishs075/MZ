@@ -1,7 +1,7 @@
 //=============================================================================
-// SKM_ShopWindowClamp.js ver1.0.1
+// SKM_ShopWindowClamp.js ver1.0.2
 //
-// Copyright (c) 2023 sakananomaeasi
+// Copyright (c) 2025 sakananomaeasi
 // Released under the MIT license
 // http://opensource.org/licenses/mit-license.php
 //=============================================================================
