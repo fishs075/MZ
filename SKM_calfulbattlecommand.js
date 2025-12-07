@@ -151,6 +151,22 @@
  * @default breath
  * @parent SelectionEffect
  *
+ * @param CommandFontSize
+ * @text コマンドフォントサイズ
+ * @type number
+ * @min 12
+ * @max 72
+ * @desc コマンドリストのフォントサイズを指定します（デフォルト28）
+ * @default 28
+ *
+ * @param CommandPadding
+ * @text コマンドパディング
+ * @type number
+ * @min 0
+ * @max 32
+ * @desc コマンド枠内の余白（ピクセル）。上下左右に適用
+ * @default 0
+ *
  * @param GlowStyle
  * @text 発光スタイル
  * @type select
@@ -373,6 +389,8 @@
     // アニメーションを一時的に無効化
     const isAnimationEnabled = selectionEffect === "animation";
     const isGlowEnabled = selectionEffect === "glow";
+    const commandFontSize = Number(parameters.CommandFontSize || 28);
+    const commandPadding = Number(parameters.CommandPadding || 0);
     const enableBorder =
         String(parameters.EnableBorder).toLowerCase() === "true" || false;
     const borderWidth = Number(parameters.BorderWidth || 2);
@@ -867,28 +885,17 @@
 
     // より滑らかなアニメーションのための修正
 
-    // 1. アニメーションを管理する独立した関数を追加
-    let _smoothAnimationValue = 0;
-    let _lastTimestamp = 0;
+    // 簡略化のため、不要な requestAnimationFrame ループは削除
 
-    // パフォーマンスを考慮したRequestAnimationFrameを使用
-    function updateSmoothAnimation(timestamp) {
-        // 初回呼び出し時は時間差分を計算しない
-        if (_lastTimestamp === 0) {
-            _lastTimestamp = timestamp;
-        }
-
-        // 経過時間に基づいて一定速度でカウントを増加（約2秒で1サイクル）
-        const elapsed = timestamp - _lastTimestamp;
-        _smoothAnimationValue = (_smoothAnimationValue + elapsed * 0.2) % 100;
-        _lastTimestamp = timestamp;
-
-        // 次のフレームを要求
-        requestAnimationFrame(updateSmoothAnimation);
+    // 共通のパディング適用関数
+    function paddedItemRect(rect) {
+        return {
+            x: rect.x + 2 + commandPadding,
+            y: rect.y + 2 + commandPadding,
+            width: rect.width - 4 - commandPadding * 2,
+            height: rect.height - 4 - commandPadding * 2,
+        };
     }
-
-    // ゲーム開始時にアニメーションを開始
-    requestAnimationFrame(updateSmoothAnimation);
 
     // 共通の描画処理関数
     function drawCommandItem(window, index, isPartyCommand) {
@@ -908,11 +915,12 @@
             ? style.getOffset(_battleAnimationCount, rect)
             : { x: 0, y: 0 };
 
+        const baseRect = paddedItemRect(rect);
         const itemRect = {
-            x: rect.x + 2 + offset.x,
-            y: rect.y + 2 + offset.y,
-            width: rect.width - 4,
-            height: rect.height - 4,
+            x: baseRect.x + offset.x,
+            y: baseRect.y + offset.y,
+            width: baseRect.width,
+            height: baseRect.height,
         };
 
         if (isSelected) {
@@ -977,7 +985,13 @@
         isSelected,
         commandStyle
     ) {
+        // フォントサイズをパラメータで上書き
+        this.contents.fontSize = commandFontSize;
         this.changeTextColor(isSelected ? "#FFFFFF" : commandStyle.textColor);
+
+        // テキスト描画位置を行高さ内で中央寄せ
+        const textHeight = this.contents.fontSize;
+        const textY = itemRect.y + (itemRect.height - textHeight) / 2;
 
         let totalWidth = this.textWidth(commandName);
         if (
@@ -1018,7 +1032,7 @@
         this.drawText(
             commandName,
             currentX,
-            itemRect.y,
+            textY,
             itemRect.width - (currentX - itemRect.x),
             "left"
         );
@@ -1033,6 +1047,14 @@
             _Window_ActorCommand_initialize.call(this, rect);
             this.opacity = 255; // 枠を表示するための不透明度
             this.backOpacity = 192; // 背景を半透明に
+        };
+
+        // フォントサイズ設定
+        const _Window_ActorCommand_resetFontSettings =
+            Window_ActorCommand.prototype.resetFontSettings;
+        Window_ActorCommand.prototype.resetFontSettings = function () {
+            _Window_ActorCommand_resetFontSettings.call(this);
+            this.contents.fontSize = commandFontSize;
         };
 
         // 背景を消す
@@ -1252,6 +1274,14 @@
             _Window_PartyCommand_initialize.call(this, rect);
             this.opacity = 255; // 枠を表示するための不透明度
             this.backOpacity = 192; // 背景を半透明に
+        };
+
+        // フォントサイズ設定
+        const _Window_PartyCommand_resetFontSettings =
+            Window_PartyCommand.prototype.resetFontSettings;
+        Window_PartyCommand.prototype.resetFontSettings = function () {
+            _Window_PartyCommand_resetFontSettings.call(this);
+            this.contents.fontSize = commandFontSize;
         };
 
         // 背景を消す
@@ -1495,18 +1525,12 @@
                 this._lastSelectedIndex = this.index();
                 this.refresh();
             }
-
-            // その他の更新処理をここに集約
-            if (isAnimationEnabled || isGlowEnabled) {
-                // 一定間隔での更新にする
-                if (_battleAnimationCount % 2 === 0) {
-                    this.refresh();
-                }
-            }
         };
 
         // 描画処理を修正
         Window_PartyCommand.prototype.drawItem = function (index) {
+            // フォントサイズを常にパラメータ値に
+            this.contents.fontSize = commandFontSize;
             if (isAnimationEnabled) {
                 this.drawAnimatedItem(index);
             } else if (isGlowEnabled) {
@@ -1518,12 +1542,7 @@
                 const isSelected = this.index() === index;
 
                 const rect = this.itemLineRect(index);
-                const itemRect = {
-                    x: rect.x + 2,
-                    y: rect.y + 2,
-                    width: rect.width - 4,
-                    height: rect.height - 4,
-                };
+                const itemRect = paddedItemRect(rect);
 
                 const ctx = this.contents.context;
                 const radius = 8;
@@ -1551,7 +1570,7 @@
 
                     // 選択時の光彩効果
                     ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-                    ctx.shadowBlur = 10;
+                    ctx.shadowBlur = 5;
                     ctx.stroke();
                 }
                 // 罫線を描画
@@ -1624,15 +1643,14 @@
 
         // アニメーション有効時の描画処理
         Window_PartyCommand.prototype.drawAnimatedItem = function (index) {
+            this.contents.fontSize = commandFontSize;
             const rect = this.itemLineRect(index);
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
 
-            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
-            // サイン波を使ってスムーズな周期的変化を作る
-            const t = Graphics.frameCount % 60;
-            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
-            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
+            // 発光用の時間軸を _battleAnimationCount に統一
+            const phase = (_battleAnimationCount % 120) / 120; // 0〜1
+            const normalizedValue = phase * 100; // 0〜100
 
             const style =
                 animationStyles[parameters.AnimationStyle || "breath"];
@@ -1647,22 +1665,18 @@
             const commandStyle = getCommandStyle(commandName, "party");
 
             // アニメーション用の矩形を計算
+            const baseRect = paddedItemRect(rect);
             const itemRect = {
-                x: rect.x + 2 + offset.x,
-                y: rect.y + 2 + offset.y,
-                width: rect.width - 4,
-                height: rect.height - 4,
+                x: baseRect.x + offset.x,
+                y: baseRect.y + offset.y,
+                width: baseRect.width,
+                height: baseRect.height,
             };
 
             // 枠線用の矩形を別途保持
             const borderRect = animateBorder
                 ? itemRect
-                : {
-                      x: rect.x + 2,
-                      y: rect.y + 2,
-                      width: rect.width - 4,
-                      height: rect.height - 4,
-                  };
+                : paddedItemRect(rect);
 
             if (isSelected) {
                 const scaleOffsetX =
@@ -1784,16 +1798,15 @@
 
         // 発光エフェクト時の描画処理
         Window_PartyCommand.prototype.drawGlowItem = function (index) {
+            this.contents.fontSize = commandFontSize;
             const rect = this.itemLineRect(index);
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
             const commandStyle = getCommandStyle(commandName, "party");
 
-            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
-            // サイン波を使ってスムーズな周期的変化を作る
-            const t = Graphics.frameCount % 60;
-            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
-            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
+            // 発光用の時間軸を _battleAnimationCount に統一
+            const phase = (_battleAnimationCount % 120) / 120; // 0〜1
+            const normalizedValue = phase * 100; // 0〜100
 
             const style = animationStyles[parameters.GlowStyle || "pulse"];
             const glowIntensity = isSelected
@@ -1803,12 +1816,7 @@
                 ? style.getBrightness(normalizedValue)
                 : 0;
 
-            const itemRect = {
-                x: rect.x + 2,
-                y: rect.y + 2,
-                width: rect.width - 4,
-                height: rect.height - 4,
-            };
+            const itemRect = paddedItemRect(rect);
 
             const ctx = this.contents.context;
             const radius = 8;
@@ -2045,15 +2053,11 @@
                 this._lastSelectedIndex = this.index();
                 this.refresh();
             }
-
-            // アニメーションの更新はしない（PartyCommandで一元管理）
-            if (isAnimationEnabled || isGlowEnabled) {
-                this.refresh();
-            }
         };
 
         // 描画処理を修正
         Window_ActorCommand.prototype.drawItem = function (index) {
+            this.contents.fontSize = commandFontSize;
             if (isAnimationEnabled) {
                 this.drawAnimatedItem(index);
             } else if (isGlowEnabled) {
@@ -2065,12 +2069,7 @@
                 const isSelected = this.index() === index;
 
                 const rect = this.itemLineRect(index);
-                const itemRect = {
-                    x: rect.x + 2,
-                    y: rect.y + 2,
-                    width: rect.width - 4,
-                    height: rect.height - 4,
-                };
+                const itemRect = paddedItemRect(rect);
 
                 const ctx = this.contents.context;
                 const radius = 8;
@@ -2098,7 +2097,7 @@
 
                     // 選択時の光彩効果
                     ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-                    ctx.shadowBlur = 10;
+                    ctx.shadowBlur = 5;
                     ctx.stroke();
                 }
 
@@ -2172,6 +2171,7 @@
 
         // アニメーション有効時の描画処理
         Window_ActorCommand.prototype.drawAnimatedItem = function (index) {
+            this.contents.fontSize = commandFontSize;
             const rect = this.itemLineRect(index);
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
@@ -2195,22 +2195,18 @@
             const commandStyle = getCommandStyle(commandName, "actor");
 
             // アニメーション用の矩形を計算
+            const baseRect = paddedItemRect(rect);
             const itemRect = {
-                x: rect.x + 2 + offset.x,
-                y: rect.y + 2 + offset.y,
-                width: rect.width - 4,
-                height: rect.height - 4,
+                x: baseRect.x + offset.x,
+                y: baseRect.y + offset.y,
+                width: baseRect.width,
+                height: baseRect.height,
             };
 
             // 枠線用の矩形を別途保持
             const borderRect = animateBorder
                 ? itemRect
-                : {
-                      x: rect.x + 2,
-                      y: rect.y + 2,
-                      width: rect.width - 4,
-                      height: rect.height - 4,
-                  };
+                : paddedItemRect(rect);
 
             if (isSelected) {
                 const scaleOffsetX =
@@ -2334,6 +2330,7 @@
 
         // 発光エフェクト時の描画処理
         Window_ActorCommand.prototype.drawGlowItem = function (index) {
+            this.contents.fontSize = commandFontSize;
             const rect = this.itemLineRect(index);
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
@@ -2353,12 +2350,7 @@
                 ? style.getBrightness(normalizedValue)
                 : 0;
 
-            const itemRect = {
-                x: rect.x + 2,
-                y: rect.y + 2,
-                width: rect.width - 4,
-                height: rect.height - 4,
-            };
+            const itemRect = paddedItemRect(rect);
 
             const ctx = this.contents.context;
             const radius = 8;
@@ -2489,6 +2481,9 @@
             if (typeof Window_ActorCommand === "function") {
                 extendActorCommand();
             }
+
+            // CSS風描画を有効にする後段の拡張（描画処理の上書き）
+            extendBattleCommands();
         }
     };
 
@@ -2528,5 +2523,4 @@
 
     // バトルコマンド拡張関数を直接呼び出す
 
-    extendBattleCommands();
 })();
