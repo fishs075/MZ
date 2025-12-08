@@ -7,6 +7,10 @@
  * @help SKM_calfulbattlecommand.js
  *
  * ■ 更新履歴
+ * v1.0.2 (2025/12/08)
+ *   - パディングを中央寄せに変更
+ *   - 行間を確保しつつ、描画領域の高さは行高ベースで維持
+ *   - 行の高さと間隔を調整できるようにした
  * v1.0.1 (2025/03/19)
  *   - バグ修正
  *   - アニメーションが加速していく問題に調整を施した
@@ -166,6 +170,22 @@
  * @max 32
  * @desc コマンド枠内の余白（ピクセル）。上下左右に適用
  * @default 0
+ *
+ * @param CommandItemHeight
+ * @text コマンド行の高さ
+ * @type number
+ * @min 0
+ * @max 200
+ * @desc コマンド1行の高さ（0でデフォルト計算に任せる）
+ * @default 0
+ *
+ * @param CommandItemSpacing
+ * @text コマンド行の間隔
+ * @type number
+ * @min 0
+ * @max 64
+ * @desc コマンド行同士の間隔（デフォルト8）
+ * @default 8
  *
  * @param GlowStyle
  * @text 発光スタイル
@@ -383,6 +403,7 @@
     const parameters = PluginManager.parameters(pluginName);
     let _battleAnimationCount = 0;
     let _lastSelectedIndex = -1;
+    let _battleCommandsPatched = false;
 
     // プラグインパラメータの解析
     const selectionEffect = parameters.SelectionEffect || "animation";
@@ -390,7 +411,10 @@
     const isAnimationEnabled = selectionEffect === "animation";
     const isGlowEnabled = selectionEffect === "glow";
     const commandFontSize = Number(parameters.CommandFontSize || 28);
-    const commandPadding = Number(parameters.CommandPadding || 0);
+    // パディングは中央寄せで不要になったため固定0
+    const commandPadding = 0;
+    const commandItemHeight = Number(parameters.CommandItemHeight || 0);
+    const commandItemSpacing = Number(parameters.CommandItemSpacing || 8);
     const enableBorder =
         String(parameters.EnableBorder).toLowerCase() === "true" || false;
     const borderWidth = Number(parameters.BorderWidth || 2);
@@ -889,93 +913,14 @@
 
     // 共通のパディング適用関数
     function paddedItemRect(rect) {
+        const spacing = Math.max(0, commandItemSpacing);
         return {
-            x: rect.x + 2 + commandPadding,
-            y: rect.y + 2 + commandPadding,
-            width: rect.width - 4 - commandPadding * 2,
-            height: rect.height - 4 - commandPadding * 2,
+            x: rect.x + 2,
+            y: rect.y + 2 + spacing / 2,
+            width: rect.width - 4,
+            // 行間を確保しつつ、描画領域の高さは行高ベースで維持
+            height: Math.max(1, rect.height - 4),
         };
-    }
-
-    // 共通の描画処理関数
-    function drawCommandItem(window, index, isPartyCommand) {
-        const rect = window.itemLineRect(index);
-        const commandName = window.commandName(index);
-        const isSelected = window.index() === index;
-        const commandStyle = getCommandStyle(
-            commandName,
-            isPartyCommand ? "party" : "actor"
-        );
-
-        const style = animationStyles[parameters.AnimationStyle || "breath"];
-        const animationScale = isSelected
-            ? style.getScale(_battleAnimationCount)
-            : 1;
-        const offset = isSelected
-            ? style.getOffset(_battleAnimationCount, rect)
-            : { x: 0, y: 0 };
-
-        const baseRect = paddedItemRect(rect);
-        const itemRect = {
-            x: baseRect.x + offset.x,
-            y: baseRect.y + offset.y,
-            width: baseRect.width,
-            height: baseRect.height,
-        };
-
-        if (isSelected) {
-            const scaleOffsetX = (itemRect.width * (animationScale - 1)) / 2;
-            const scaleOffsetY = (itemRect.height * (animationScale - 1)) / 2;
-            itemRect.x -= scaleOffsetX;
-            itemRect.y -= scaleOffsetY;
-            itemRect.width *= animationScale;
-            itemRect.height *= animationScale;
-        }
-
-        const ctx = window.contents.context;
-        const radius = 8;
-
-        ctx.save();
-        ctx.beginPath();
-
-        window.drawRoundedRect(ctx, itemRect, radius);
-
-        const gradient = window.createCommandGradient(
-            ctx,
-            itemRect,
-            commandStyle
-        );
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        if (isSelected) {
-            // 発光エフェクト
-            ctx.globalCompositeOperation = "overlay";
-            ctx.fillStyle = `rgba(255, 255, 255, ${style.getBrightness(
-                _battleAnimationCount
-            )})`;
-            ctx.fill();
-
-            // 光彩効果
-            ctx.globalCompositeOperation = "source-over";
-            ctx.shadowColor = commandStyle.backgroundColor;
-            ctx.shadowBlur = style.getGlowIntensity(_battleAnimationCount);
-            ctx.stroke();
-        }
-
-        // 枠線の描画
-        if (enableBorder) {
-            ctx.globalCompositeOperation = "source-over";
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = borderWidth;
-            ctx.stroke();
-        }
-
-        ctx.restore();
-
-        // アイコンとテキストの描画
-        window.drawCommandText(commandName, itemRect, isSelected, commandStyle);
     }
 
     // テキストとアイコンの描画用共通関数
@@ -1190,81 +1135,6 @@
         };
     }
 
-    // 角丸長方形を描画するヘルパー関数
-    Window_PartyCommand.prototype.drawRoundedRect = function (
-        ctx,
-        rect,
-        radius
-    ) {
-        ctx.moveTo(rect.x + radius, rect.y);
-        ctx.lineTo(rect.x + rect.width - radius, rect.y);
-        ctx.arcTo(
-            rect.x + rect.width,
-            rect.y,
-            rect.x + rect.width,
-            rect.y + radius,
-            radius
-        );
-        ctx.lineTo(rect.x + rect.width, rect.y + rect.height - radius);
-        ctx.arcTo(
-            rect.x + rect.width,
-            rect.y + rect.height,
-            rect.x + rect.width - radius,
-            rect.y + rect.height,
-            radius
-        );
-        ctx.lineTo(rect.x + radius, rect.y + rect.height);
-        ctx.arcTo(
-            rect.x,
-            rect.y + rect.height,
-            rect.x,
-            rect.y + rect.height - radius,
-            radius
-        );
-        ctx.lineTo(rect.x, rect.y + radius);
-        ctx.arcTo(rect.x, rect.y, rect.x + radius, rect.y, radius);
-        ctx.closePath();
-    };
-
-    // グラデーション作成のヘルパー関数
-    Window_PartyCommand.prototype.createCommandGradient = function (
-        ctx,
-        rect,
-        style
-    ) {
-        const angle = Number(style.angle || 0);
-        const centerX = rect.x + rect.width / 2;
-        const centerY = rect.y + rect.height / 2;
-        const distance = Math.max(rect.width, rect.height);
-
-        const radians = (angle * Math.PI) / 180;
-        const gradientStartX = centerX - (Math.cos(radians) * distance) / 2;
-        const gradientStartY = centerY - (Math.sin(radians) * distance) / 2;
-        const gradientEndX = centerX + (Math.cos(radians) * distance) / 2;
-        const gradientEndY = centerY + (Math.sin(radians) * distance) / 2;
-
-        const gradient = ctx.createLinearGradient(
-            gradientStartX,
-            gradientStartY,
-            gradientEndX,
-            gradientEndY
-        );
-
-        gradient.addColorStop(0, style.backgroundColor);
-        gradient.addColorStop(
-            0.5,
-            style.backgroundColor2 || style.backgroundColor
-        );
-        gradient.addColorStop(
-            1,
-            style.backgroundColor3 ||
-                style.backgroundColor2 ||
-                style.backgroundColor
-        );
-
-        return gradient;
-    };
-
     // パーティーコマンドウィンドウの拡張処理を関数化
     function extendPartyCommand() {
         // パーティーコマンドウィンドウの初期化拡張
@@ -1370,13 +1240,7 @@
         SceneManager._onSceneCreate_patched = true;
 
         // バトルコマンド拡張関数を直接呼び出す
-        if (typeof Window_PartyCommand === "function") {
-            extendPartyCommand();
-        }
-
-        if (typeof Window_ActorCommand === "function") {
-            extendActorCommand();
-        }
+        extendBattleCommands();
     });
 
     // 以下の2つの関数定義を削除
@@ -1385,6 +1249,8 @@
 
     // 統合された拡張関数
     function extendBattleCommands() {
+        if (_battleCommandsPatched) return;
+        _battleCommandsPatched = true;
         // パーティーコマンドの拡張
         if (typeof Window_PartyCommand === "function") {
             extendPartyCommandWindow();
@@ -1398,6 +1264,45 @@
 
     // パーティーコマンド拡張処理
     function extendPartyCommandWindow() {
+        if (Window_PartyCommand.prototype._calfulPatched) {
+            return;
+        }
+        Window_PartyCommand.prototype._calfulPatched = true;
+
+        const _Window_PartyCommand_initialize =
+            Window_PartyCommand.prototype.initialize;
+        Window_PartyCommand.prototype.initialize = function (rect) {
+            _Window_PartyCommand_initialize.call(this, rect);
+            this.opacity = 255;
+            this.backOpacity = 192;
+            this._lastSelectedIndex = -1;
+        };
+
+        const _Window_PartyCommand_resetFontSettings =
+            Window_PartyCommand.prototype.resetFontSettings;
+        Window_PartyCommand.prototype.resetFontSettings = function () {
+            _Window_PartyCommand_resetFontSettings.call(this);
+            this.contents.fontSize = commandFontSize;
+        };
+
+        Window_PartyCommand.prototype.drawBackgroundRect = function (rect) {
+            // 背景は塗らない
+        };
+
+        Window_PartyCommand.prototype.lineHeight = function () {
+            return commandItemHeight > 0
+                ? commandItemHeight
+                : Window_Command.prototype.lineHeight.call(this);
+        };
+
+        Window_PartyCommand.prototype.itemHeight = function () {
+            return this.lineHeight() + commandItemSpacing;
+        };
+
+        Window_PartyCommand.prototype.spacing = function () {
+            return commandItemSpacing;
+        };
+
         // 角丸長方形を描画するヘルパー関数
         Window_PartyCommand.prototype.drawRoundedRect = function (
             ctx,
@@ -1928,6 +1833,45 @@
 
     // アクターコマンド拡張処理
     function extendActorCommandWindow() {
+        if (Window_ActorCommand.prototype._calfulPatched) {
+            return;
+        }
+        Window_ActorCommand.prototype._calfulPatched = true;
+
+        const _Window_ActorCommand_initialize =
+            Window_ActorCommand.prototype.initialize;
+        Window_ActorCommand.prototype.initialize = function (rect) {
+            _Window_ActorCommand_initialize.call(this, rect);
+            this.opacity = 255;
+            this.backOpacity = 192;
+            this._lastSelectedIndex = -1;
+        };
+
+        const _Window_ActorCommand_resetFontSettings =
+            Window_ActorCommand.prototype.resetFontSettings;
+        Window_ActorCommand.prototype.resetFontSettings = function () {
+            _Window_ActorCommand_resetFontSettings.call(this);
+            this.contents.fontSize = commandFontSize;
+        };
+
+        Window_ActorCommand.prototype.drawBackgroundRect = function (rect) {
+            // 背景は塗らない
+        };
+
+        Window_ActorCommand.prototype.lineHeight = function () {
+            return commandItemHeight > 0
+                ? commandItemHeight
+                : Window_Command.prototype.lineHeight.call(this);
+        };
+
+        Window_ActorCommand.prototype.itemHeight = function () {
+            return this.lineHeight() + commandItemSpacing;
+        };
+
+        Window_ActorCommand.prototype.spacing = function () {
+            return commandItemSpacing;
+        };
+
         // 角丸長方形を描画するヘルパー関数
         Window_ActorCommand.prototype.drawRoundedRect = function (
             ctx,
@@ -2176,11 +2120,9 @@
             const commandName = this.commandName(index);
             const isSelected = this.index() === index;
 
-            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
-            // サイン波を使ってスムーズな周期的変化を作る
-            const t = Graphics.frameCount % 60;
-            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
-            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
+            // パーティーコマンドと同じ時間軸で正規化（約2秒周期）
+            const phase = (_battleAnimationCount % 120) / 120;
+            const normalizedValue = phase * 100;
 
             const style =
                 animationStyles[parameters.AnimationStyle || "breath"];
@@ -2336,11 +2278,9 @@
             const isSelected = this.index() === index;
             const commandStyle = getCommandStyle(commandName, "actor");
 
-            // RPGツクールの標準フレームカウントを利用（0〜59の範囲、約1秒周期）
-            // サイン波を使ってスムーズな周期的変化を作る
-            const t = Graphics.frameCount % 60;
-            const smoothValue = Math.sin((t / 60) * Math.PI * 2); // -1～1の値
-            const normalizedValue = ((smoothValue + 1) / 2) * 100; // 0～100の値に正規化
+            // パーティーコマンドと同じ時間軸で正規化（約2秒周期）
+            const phase = (_battleAnimationCount % 120) / 120;
+            const normalizedValue = phase * 100;
 
             const style = animationStyles[parameters.GlowStyle || "pulse"];
             const glowIntensity = isSelected
@@ -2472,17 +2412,7 @@
         if (this._scene instanceof Scene_Battle) {
             // グローバル変数のリセット
             _battleAnimationCount = 0;
-            // パーティーコマンドウィンドウの拡張
-            if (typeof Window_PartyCommand === "function") {
-                extendPartyCommand();
-            }
-
-            // アクターコマンドウィンドウの拡張
-            if (typeof Window_ActorCommand === "function") {
-                extendActorCommand();
-            }
-
-            // CSS風描画を有効にする後段の拡張（描画処理の上書き）
+            // CSS風描画を有効にする拡張（描画処理の上書き）
             extendBattleCommands();
         }
     };
