@@ -16,6 +16,20 @@
 
 https://github.com/user-attachments/assets/147a3df8-dbf3-4e87-ac11-d30e4c9184f4
 
+
+
+
+
+
+#### メニュー有効/無効スイッチコントロール
+[最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/MenuCommandSwitchControl.js)
+
+メニューコマンドの有効/無効をスイッチでオンオフします
+
+
+
+
+
 ## 更新履歴
 #### カラフルメニュー
 - v1.0.4 (2025/03/19)
