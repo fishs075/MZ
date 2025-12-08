@@ -7,13 +7,13 @@
  * @help SKM_calfulmenu.js
  *
  * ■ 更新履歴
- * v1.0.4 (2025/03/19)
- *   - 他プラグインとの互換性強化
- *     - メニューコマンド並び替えプラグインとの併用時のフリーズ問題を修正
- *     - コマンド処理とアクター選択処理の改善
- *     - ステータスウィンドウのハンドラー設定を強化
- *     - シーン遷移の安定性向上
- *
+ * v1.0.5 (2025/12/08)
+ *   - コマンド無効時の表示を対応
+ * 
+ * v1.0.4 (2025/10/10)
+ *   - プリセット適用の一致判定を commandName と commandSymbol の両対応に変更
+ *   - 表示名変更・多言語化・他プラグインでの名称差し替え時でもプリセットが反映されるよう修正
+ * 
  * v1.0.3 (2025/03/17)
  *   - アイコン機能の追加
  *     - 各コマンドにアイコンを設定可能
@@ -525,31 +525,21 @@
         },
     };
 
-    // スタイル取得関数を修正
-    function getCommandStyle(commandName) {
-        // シンボルとコマンド名のマッピングを作成
-        const symbolMap = {
-            アイテム: "item",
-            スキル: "skill",
-            装備: "equip",
-            ステータス: "status",
-            並び替え: "formation",
-            オプション: "options",
-            セーブ: "save",
-            ロード: "load",
-            ゲーム終了: "gameEnd",
-        };
+    // スタイル取得関数（名前・シンボル両対応 + 緩やかな一致）
+    function getCommandStyle(commandName, commandSymbol) {
+        const normalize = (s) => (s || "").toString().trim().toLowerCase();
+        const nName = normalize(commandName);
+        const nSym = normalize(commandSymbol);
 
-        // まずcommandNameで直接検索
+        // 1) 完全一致（表示名）
         let customStyle = customColors.find(
-            (style) => style.commandName === commandName
+            (style) => normalize(style.commandName) === nName
         );
 
-        // 見つからない場合はシンボルでの対応を確認
-        if (!customStyle && symbolMap[commandName]) {
-            const symbol = symbolMap[commandName];
+        // 2) シンボル一致（ユーザーが commandName にシンボル名を指定しているケースも考慮）
+        if (!customStyle && nSym) {
             customStyle = customColors.find(
-                (style) => style.commandName === symbol
+                (style) => normalize(style.commandName) === nSym
             );
         }
 
@@ -841,34 +831,13 @@
     };
 
     // 描画処理を修正
-    const _Window_MenuCommand_drawItem = Window_MenuCommand.prototype.drawItem;
     Window_MenuCommand.prototype.drawItem = function (index) {
-        // 他のプラグインとの互換性のために元のcommandの情報を保持
-        const command = this._list[index];
-        if (!command) {
-            return;
-        }
-
-        // 実際の描画処理を実行
         if (isAnimationEnabled) {
             this.drawAnimatedItem(index);
         } else if (isGlowEnabled) {
             this.drawGlowItem(index);
         } else {
             this.drawStaticItem(index);
-        }
-    };
-
-    // メニューコマンド並び替えプラグインとの互換性対応
-    // 元のcallHandlerを保持し、ハンドラー実行が確実に行われるようにする
-    const _Window_MenuCommand_callHandler =
-        Window_MenuCommand.prototype.callHandler;
-    Window_MenuCommand.prototype.callHandler = function (symbol) {
-        if (this.isHandled(symbol)) {
-            _Window_MenuCommand_callHandler.call(this, symbol);
-        } else if (this.isHandled("ok")) {
-            // symbolが見つからない場合はokハンドラーを代替として使用
-            _Window_MenuCommand_callHandler.call(this, "ok");
         }
     };
 
@@ -948,8 +917,10 @@
     Window_MenuCommand.prototype.drawStaticItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
+        const commandSymbol = this.commandSymbol(index);
         const isSelected = this.index() === index;
-        const commandStyle = getCommandStyle(commandName);
+        const enabled = this.isCommandEnabled(index);
+        const commandStyle = getCommandStyle(commandName, commandSymbol);
 
         const itemRect = {
             x: rect.x + 2,
@@ -962,6 +933,9 @@
         const radius = 8;
 
         ctx.save();
+        if (!enabled) {
+            ctx.globalAlpha = 0.5;
+        }
         ctx.beginPath();
 
         // 角丸の描画
@@ -997,7 +971,14 @@
         ctx.restore();
 
         // アイコンとテキストの描画
-        this.changeTextColor(isSelected ? "#FFFFFF" : commandStyle.textColor);
+        this.changePaintOpacity(enabled);
+        this.changeTextColor(
+            enabled
+                ? isSelected
+                    ? "#FFFFFF"
+                    : commandStyle.textColor
+                : ColorManager.textColor(7)
+        );
 
         // アイコンとテキストの合計幅を計算
         let totalWidth = this.textWidth(commandName);
@@ -1046,13 +1027,16 @@
             itemRect.width - (currentX - itemRect.x),
             "left"
         );
+        this.changePaintOpacity(true);
     };
 
     // アニメーション有効時の描画処理
     Window_MenuCommand.prototype.drawAnimatedItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
+        const commandSymbol = this.commandSymbol(index);
         const isSelected = this.index() === index;
+        const enabled = this.isCommandEnabled(index);
 
         const style = animationStyles[parameters.AnimationStyle || "breath"];
         const animationScale = isSelected ? style.getScale(_animationCount) : 1;
@@ -1061,7 +1045,7 @@
             : { x: 0, y: 0 };
 
         // コマンドのスタイルを取得
-        const commandStyle = getCommandStyle(commandName);
+        const commandStyle = getCommandStyle(commandName, commandSymbol);
 
         // アニメーション用の矩形を計算
         const itemRect = {
@@ -1102,6 +1086,9 @@
         const radius = 8;
 
         ctx.save();
+        if (!enabled) {
+            ctx.globalAlpha = 0.5;
+        }
         ctx.beginPath();
 
         // 角丸の描画
@@ -1165,7 +1152,10 @@
         ctx.restore();
 
         // アイコンとテキストの描画
-        this.changeTextColor(commandStyle.textColor);
+        this.changePaintOpacity(enabled);
+        this.changeTextColor(
+            enabled ? commandStyle.textColor : ColorManager.textColor(7)
+        );
 
         // アイコンとテキストの合計幅を計算
         let totalWidth = this.textWidth(commandName);
@@ -1226,14 +1216,17 @@
                 "left"
             );
         }
+        this.changePaintOpacity(true);
     };
 
     // 発光エフェクト時の描画処理
     Window_MenuCommand.prototype.drawGlowItem = function (index) {
         const rect = this.itemLineRect(index);
         const commandName = this.commandName(index);
+        const commandSymbol = this.commandSymbol(index);
         const isSelected = this.index() === index;
-        const commandStyle = getCommandStyle(commandName);
+        const enabled = this.isCommandEnabled(index);
+        const commandStyle = getCommandStyle(commandName, commandSymbol);
 
         const style = animationStyles[parameters.GlowStyle || "pulse"];
         const glowIntensity = isSelected
@@ -1254,6 +1247,9 @@
         const radius = 8;
 
         ctx.save();
+        if (!enabled) {
+            ctx.globalAlpha = 0.5;
+        }
         ctx.beginPath();
 
         // 角丸の描画
@@ -1295,7 +1291,14 @@
         ctx.restore();
 
         // アイコンとテキストの描画
-        this.changeTextColor(isSelected ? "#FFFFFF" : commandStyle.textColor);
+        this.changePaintOpacity(enabled);
+        this.changeTextColor(
+            enabled
+                ? isSelected
+                    ? "#FFFFFF"
+                    : commandStyle.textColor
+                : ColorManager.textColor(7)
+        );
 
         // アイコンとテキストの合計幅を計算
         let totalWidth = this.textWidth(commandName);
@@ -1344,6 +1347,7 @@
             itemRect.width - (currentX - itemRect.x),
             "left"
         );
+        this.changePaintOpacity(true);
     };
 
     // 角丸長方形を描画するヘルパー関数
@@ -1401,101 +1405,4 @@
             ? parameters.CustomBorderColor
             : parameters.BorderColor;
     const animateBorder = parameters.AnimateBorder === "true";
-
-    // Scene_Menuのコマンドが正しく動作するようにする
-    // 他のプラグインとの互換性対策
-    const _Scene_Menu_create = Scene_Menu.prototype.create;
-    Scene_Menu.prototype.create = function () {
-        _Scene_Menu_create.call(this);
-        // コマンドウィンドウの再設定
-        this._commandWindow.setHandler("item", this.commandItem.bind(this));
-        this._commandWindow.setHandler(
-            "skill",
-            this.commandPersonal.bind(this)
-        );
-        this._commandWindow.setHandler(
-            "equip",
-            this.commandPersonal.bind(this)
-        );
-        this._commandWindow.setHandler(
-            "status",
-            this.commandPersonal.bind(this)
-        );
-        this._commandWindow.setHandler(
-            "formation",
-            this.commandFormation.bind(this)
-        );
-        this._commandWindow.setHandler(
-            "options",
-            this.commandOptions.bind(this)
-        );
-        this._commandWindow.setHandler("save", this.commandSave.bind(this));
-        this._commandWindow.setHandler(
-            "gameEnd",
-            this.commandGameEnd.bind(this)
-        );
-
-        // ステータスウィンドウのハンドラーを設定
-        if (this._statusWindow) {
-            this._statusWindow.setHandler("ok", this.onPersonalOk.bind(this));
-            this._statusWindow.setHandler(
-                "cancel",
-                this.onPersonalCancel.bind(this)
-            );
-        }
-    };
-
-    // メニューコマンド並び替えプラグインとの互換性を強化
-    const _Scene_Menu_commandPersonal = Scene_Menu.prototype.commandPersonal;
-    Scene_Menu.prototype.commandPersonal = function () {
-        _Scene_Menu_commandPersonal.call(this);
-        // ステータスウィンドウのリフレッシュを確保
-        this._statusWindow.refresh();
-    };
-
-    // アクター選択後の遷移を上書き
-    // 他のプラグインとの競合を修正
-    Scene_Menu.prototype.onPersonalOk = function () {
-        const symbol = this._commandWindow.currentSymbol();
-        if (symbol === "skill") {
-            SceneManager.push(Scene_Skill);
-        } else if (symbol === "equip") {
-            SceneManager.push(Scene_Equip);
-        } else if (symbol === "status") {
-            SceneManager.push(Scene_Status);
-        } else {
-            // MenuCommandSortMZプラグインなどのために元の処理も呼ぶ
-            try {
-                const _onPersonalOk =
-                    Scene_Menu.prototype.constructor.prototype.onPersonalOk;
-                if (_onPersonalOk && _onPersonalOk !== this.onPersonalOk) {
-                    _onPersonalOk.call(this);
-                }
-            } catch (e) {
-                console.error("Error in onPersonalOk:", e);
-            }
-        }
-    };
-
-    // アクター選択キャンセル時の処理
-    Scene_Menu.prototype.onPersonalCancel = function () {
-        this._statusWindow.deselect();
-        this._commandWindow.activate();
-    };
-
-    // ステータスウィンドウの初期化を確保
-    const _Scene_Menu_createStatusWindow =
-        Scene_Menu.prototype.createStatusWindow;
-    Scene_Menu.prototype.createStatusWindow = function () {
-        if (!this._statusWindow) {
-            _Scene_Menu_createStatusWindow.call(this);
-        }
-        if (this._statusWindow) {
-            this._statusWindow.setHandler("ok", this.onPersonalOk.bind(this));
-            this._statusWindow.setHandler(
-                "cancel",
-                this.onPersonalCancel.bind(this)
-            );
-        }
-    };
 })();
