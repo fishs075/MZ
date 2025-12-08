@@ -160,32 +160,11 @@
  * @type number
  * @min 12
  * @max 72
- * @desc コマンドリストのフォントサイズを指定します（デフォルト28）
- * @default 28
+ * @desc コマンドリストのフォントサイズを指定します（デフォルト24）
+ * @default 24
  *
- * @param CommandPadding
- * @text コマンドパディング
- * @type number
- * @min 0
- * @max 32
- * @desc コマンド枠内の余白（ピクセル）。上下左右に適用
- * @default 0
  *
- * @param CommandItemHeight
- * @text コマンド行の高さ
- * @type number
- * @min 0
- * @max 200
- * @desc コマンド1行の高さ（0でデフォルト計算に任せる）
- * @default 0
- *
- * @param CommandItemSpacing
- * @text コマンド行の間隔
- * @type number
- * @min 0
- * @max 64
- * @desc コマンド行同士の間隔（デフォルト8）
- * @default 8
+
  *
  * @param GlowStyle
  * @text 発光スタイル
@@ -413,8 +392,6 @@
     const commandFontSize = Number(parameters.CommandFontSize || 28);
     // パディングは中央寄せで不要になったため固定0
     const commandPadding = 0;
-    const commandItemHeight = Number(parameters.CommandItemHeight || 0);
-    const commandItemSpacing = Number(parameters.CommandItemSpacing || 8);
     const enableBorder =
         String(parameters.EnableBorder).toLowerCase() === "true" || false;
     const borderWidth = Number(parameters.BorderWidth || 2);
@@ -913,12 +890,10 @@
 
     // 共通のパディング適用関数
     function paddedItemRect(rect) {
-        const spacing = Math.max(0, commandItemSpacing);
         return {
             x: rect.x + 2,
-            y: rect.y + 2 + spacing / 2,
+            y: rect.y + 2,
             width: rect.width - 4,
-            // 行間を確保しつつ、描画領域の高さは行高ベースで維持
             height: Math.max(1, rect.height - 4),
         };
     }
@@ -962,7 +937,7 @@
                 itemRect.y +
                 (itemRect.height -
                     ImageManager.iconHeight * iconSetting.scale) /
-                    2;
+                2;
             this.drawIcon(
                 iconSetting.iconIndex,
                 currentX,
@@ -1094,8 +1069,8 @@
             gradient.addColorStop(
                 1,
                 style.backgroundColor3 ||
-                    style.backgroundColor2 ||
-                    style.backgroundColor
+                style.backgroundColor2 ||
+                style.backgroundColor
             );
 
             return gradient;
@@ -1289,19 +1264,9 @@
             // 背景は塗らない
         };
 
-        Window_PartyCommand.prototype.lineHeight = function () {
-            return commandItemHeight > 0
-                ? commandItemHeight
-                : Window_Command.prototype.lineHeight.call(this);
-        };
 
-        Window_PartyCommand.prototype.itemHeight = function () {
-            return this.lineHeight() + commandItemSpacing;
-        };
 
-        Window_PartyCommand.prototype.spacing = function () {
-            return commandItemSpacing;
-        };
+
 
         // 角丸長方形を描画するヘルパー関数
         Window_PartyCommand.prototype.drawRoundedRect = function (
@@ -1369,8 +1334,8 @@
             gradient.addColorStop(
                 1,
                 style.backgroundColor3 ||
-                    style.backgroundColor2 ||
-                    style.backgroundColor
+                style.backgroundColor2 ||
+                style.backgroundColor
             );
 
             return gradient;
@@ -1503,7 +1468,7 @@
                     const spacing = commandStyle.iconSettings.spacing;
                     totalWidth +=
                         ImageManager.iconWidth *
-                            commandStyle.iconSettings.scale +
+                        commandStyle.iconSettings.scale +
                         spacing;
                 }
 
@@ -1522,7 +1487,7 @@
                         itemRect.y +
                         (itemRect.height -
                             ImageManager.iconHeight * iconSetting.scale) /
-                            2;
+                        2;
                     this.drawIcon(
                         iconSetting.iconIndex,
                         currentX,
@@ -1678,7 +1643,7 @@
                     itemRect.y +
                     (itemRect.height -
                         ImageManager.iconHeight * iconSetting.scale) /
-                        2;
+                    2;
                 this.drawIcon(
                     iconSetting.iconIndex,
                     currentX,
@@ -1807,7 +1772,7 @@
                     itemRect.y +
                     (itemRect.height -
                         ImageManager.iconHeight * iconSetting.scale) /
-                        2;
+                    2;
                 this.drawIcon(
                     iconSetting.iconIndex,
                     currentX,
@@ -1858,19 +1823,7 @@
             // 背景は塗らない
         };
 
-        Window_ActorCommand.prototype.lineHeight = function () {
-            return commandItemHeight > 0
-                ? commandItemHeight
-                : Window_Command.prototype.lineHeight.call(this);
-        };
 
-        Window_ActorCommand.prototype.itemHeight = function () {
-            return this.lineHeight() + commandItemSpacing;
-        };
-
-        Window_ActorCommand.prototype.spacing = function () {
-            return commandItemSpacing;
-        };
 
         // 角丸長方形を描画するヘルパー関数
         Window_ActorCommand.prototype.drawRoundedRect = function (
@@ -1938,8 +1891,8 @@
             gradient.addColorStop(
                 1,
                 style.backgroundColor3 ||
-                    style.backgroundColor2 ||
-                    style.backgroundColor
+                style.backgroundColor2 ||
+                style.backgroundColor
             );
 
             return gradient;
@@ -2070,7 +2023,7 @@
                     const spacing = commandStyle.iconSettings.spacing;
                     totalWidth +=
                         ImageManager.iconWidth *
-                            commandStyle.iconSettings.scale +
+                        commandStyle.iconSettings.scale +
                         spacing;
                 }
 
@@ -2089,7 +2042,7 @@
                         itemRect.y +
                         (itemRect.height -
                             ImageManager.iconHeight * iconSetting.scale) /
-                            2;
+                        2;
                     this.drawIcon(
                         iconSetting.iconIndex,
                         currentX,
@@ -2247,7 +2200,7 @@
                     itemRect.y +
                     (itemRect.height -
                         ImageManager.iconHeight * iconSetting.scale) /
-                        2;
+                    2;
                 this.drawIcon(
                     iconSetting.iconIndex,
                     currentX,
@@ -2376,7 +2329,7 @@
                     itemRect.y +
                     (itemRect.height -
                         ImageManager.iconHeight * iconSetting.scale) /
-                        2;
+                    2;
                 this.drawIcon(
                     iconSetting.iconIndex,
                     currentX,
@@ -2416,6 +2369,8 @@
             extendBattleCommands();
         }
     };
+
+
 
     const _Scene_Battle_update = Scene_Battle.prototype.update;
     Scene_Battle.prototype.update = function () {
