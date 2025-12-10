@@ -4,10 +4,19 @@ Ver2<br>
 <br>
 DL準備中<br>
 <br>
+## 概要
+
+-   アクターのメニュー表示を CSS風 にカスタマイズするプラグインです。
+-   背景色とパターンを組み合わせて、キャラクターごとに個性的なカードスタイルを作成できます。
+<br>
 <img src="./images/SKM_ActorCardStyle2.png" width="400">
 
 
-### 特徴
+https://github.com/user-attachments/assets/c2326919-1ac8-4b7e-af14-2ddcef50a0a4
+
+
+
+### 特徴（Ver1 → Ver2）
 -   背景のグラデーション表示
 -   パターンサイズの可変
 -   枠線設定時、顔画像の縮小描写
