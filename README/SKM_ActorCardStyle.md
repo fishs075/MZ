@@ -1,5 +1,24 @@
 # アクターカードスタイルプラグイン
 
+Ver2<br>
+<br>
+DL準備中<br>
+<br>
+<img src="./images/SKM_ActorCardStyle2.png" width="400">
+
+
+-   背景のグラデーション表示
+-   パターンサイズの可変
+-
+
+
+
+
+
+
+
+Ver1<br>
+
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle.js)
 
 <!-- ここに画像を入れる予定 -->
