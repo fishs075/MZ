@@ -106,12 +106,45 @@ v1.0.0-1.0.2 (2017/5/16-17) - Tsumio 氏による初期開発
 -   背景色指定機能の追加
 -   1 ページ表示数設定機能の追加
 
-## ライセンス
 
-MIT License<br>
-作者に無断で改変、再配布が可能で、利用形態についても制限はありません。<br>
-自由に使用してください。
 
 ## 作者
 
 さかなのまえあし
+
+
+## ライセンス
+
+MIT License<br>
+作者に無断で改変、再配布が可能で、利用形態についても制限はありません。<br>
+自由に使用してください。<br>
+<br>
+//=====================================<br>
+// SKM_ChangeActorImageSystem.js<br>
+//=====================================<br>
+// Copyright (c) 2023 Sakananomaeasi<br>
+// This software is released under the MIT License.<br>
+// http://opensource.org/licenses/mit-license.php<br>
+// ----------------------------------------------------------------------------<br>
+//<br>
+//=====================================<br>
+// UTSU_ChangeActorImageSystem.js<br>
+//=====================================<br>
+// Copyright (c) 2020 Utsuda<br>
+// This software is released under the MIT License.<br>
+// http://opensource.org/licenses/mit-license.php<br>
+// ----------------------------------------------------------------------------<br>
+// [GitHub] : https://github.com/utsudashinou<br>
+// [Twitter]: https://twitter.com/virtualUtsuda<br>
+//=============================================================================<br>
+//<br>
+//=====================================<br>
+// ChangeActorImageSystem.js<br>
+//=====================================<br>
+// Copyright (c) 2017 Tsumio<br>
+// This software is released under the MIT License.<br>
+// http://opensource.org/licenses/mit-license.php<br>
+// ----------------------------------------------------------------------------<br>
+// [Blog]   : http://ntgame.wpblog.jp/<br>
+// [Twitter]: https://twitter.com/TsumioNtGame<br>
+//=============================================================================<br>
