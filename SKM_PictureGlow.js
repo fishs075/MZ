@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc v1.4.0 ピクチャに発光効果とアニメーションを適用するプラグイン
+ * @plugindesc v1.5.0 ピクチャに発光効果とアニメーションを適用するプラグイン
  * @author さかなのまえあし
  * @url
  *
@@ -60,6 +60,11 @@
  * 【スクリプト使用例】
  * glowPicture(1, true, "pulse", "#ff0000", 20, 150, 5);  // ピクチャ1に赤い脈動エフェクト
  * animatePicture(1, true, "breath", 5, 5);  // ピクチャ1にふわふわ浮遊アニメーション
+ *
+ * 【発光キャンパスサイズについて】
+ * - glowPicture の canvasWidth / canvasHeight で発光処理用キャンパスを指定できます。
+ * - 0 のときはピクチャの幅/高さが使われます。
+ * - 光を大きく広げたい場合はピクチャより大きい値を指定してください。
  *
  * 【組み合わせ例】
  * - 人物立ち絵に「soft_pulse」と「breath」を組み合わせると、生命感のある自然な動きに
@@ -151,6 +156,14 @@
  * @off 無効
  * @default false
  *
+ * @param LightweightMode
+ * @text 軽量描画モード
+ * @desc パーティクル数を減らし、描画負荷を抑えます
+ * @type boolean
+ * @on 有効
+ * @off 無効
+ * @default false
+ *
  * @command glowPicture
  * @text 発光効果設定
  * @desc ピクチャに発光効果を適用します
@@ -212,6 +225,18 @@
  * @min 1
  * @max 20
  * @desc 発光アニメーションの速度を設定します（1-20）
+ *
+ * @arg canvasWidth
+ * @text キャンパス幅
+ * @type number
+ * @min 0
+ * @desc 発光処理用の基準キャンパス幅（0でピクチャ幅）
+ *
+ * @arg canvasHeight
+ * @text キャンパス高さ
+ * @type number
+ * @min 0
+ * @desc 発光処理用の基準キャンパス高さ（0でピクチャ高さ）
  *
  * @command setBrightness
  * @text 明るさ設定
@@ -305,6 +330,7 @@
     const defaultAnimationPower = Number(parameters.DefaultAnimationPower || 5);
     const animationSpeed = Number(parameters.AnimationSpeed || 5);
     const isDebugMode = parameters.DebugMode === "true";
+    const isLightweightMode = parameters.LightweightMode === "true";
 
     // デバッグ用ログ出力
     function debugLog(...args) {
@@ -313,16 +339,18 @@
         }
     }
 
-    // 初期化時にデバッグログを出力
-    console.log(
-        `[SKM_PictureGlow] プラグイン初期化（デバッグモード: ${isDebugMode}）`
-    );
-    console.log(
-        `パラメータ: 発光スタイル=${defaultGlowStyle}, 色=${defaultGlowColor}, 強度=${defaultGlowIntensity}, 不透明度=${defaultGlowOpacity}, 速度=${animationSpeed}`
-    );
-    console.log(
-        `パラメータ: アニメーションスタイル=${defaultAnimationStyle}, アニメーション強度=${defaultAnimationPower}`
-    );
+    // 初期化時ログ（デバッグONのときのみ）
+    if (isDebugMode) {
+        console.log(
+            `[SKM_PictureGlow] プラグイン初期化（デバッグモード: ${isDebugMode}）`
+        );
+        console.log(
+            `パラメータ: 発光スタイル=${defaultGlowStyle}, 色=${defaultGlowColor}, 強度=${defaultGlowIntensity}, 不透明度=${defaultGlowOpacity}, 速度=${animationSpeed}`
+        );
+        console.log(
+            `パラメータ: アニメーションスタイル=${defaultAnimationStyle}, アニメーション強度=${defaultAnimationPower}`
+        );
+    }
 
     // アニメーションカウンタ
     let _animationCount = 0;
@@ -580,7 +608,8 @@
                 const color = this._extractRgba(currentColor, 0.8);
 
                 // ランダムな位置に小さな輝きを追加
-                for (let i = 0; i < 3; i++) {
+                const smallCount = isLightweightMode ? 1 : 3;
+                for (let i = 0; i < smallCount; i++) {
                     const x = Math.random() * w;
                     const y = Math.random() * h;
                     const size = 2 + Math.random() * (intensity * 0.2);
@@ -593,7 +622,8 @@
 
                 // 下から上に登っていくキラキラを追加（カラフルメニューと同様の動き）
                 ctx.globalCompositeOperation = "lighter";
-                for (let i = 0; i < 8; i++) {
+                const trailCount = isLightweightMode ? 4 : 8;
+                for (let i = 0; i < trailCount; i++) {
                     // 複数の正弦波を組み合わせてきらきら感を出す
                     const sparkle1 = Math.sin(count * 0.5 + i) * 0.3;
                     const sparkle2 = Math.sin((count + i * 2) * 0.7) * 0.3;
@@ -710,7 +740,8 @@
 
                 // きらきらエフェクトを追加
                 ctx.globalCompositeOperation = "lighter";
-                for (let i = 0; i < 4; i++) {
+                const smallCount = isLightweightMode ? 2 : 4;
+                for (let i = 0; i < smallCount; i++) {
                     const x = Math.random() * w;
                     const y = Math.random() * h;
                     const size =
@@ -729,7 +760,8 @@
                 // 色をより明確にするために描画順を調整
                 ctx.globalCompositeOperation = "lighter";
 
-                for (let i = 0; i < 10; i++) {
+                const riseCount = isLightweightMode ? 5 : 10;
+                for (let i = 0; i < riseCount; i++) {
                     // 脈動と連動した効果
                     const sparklePhase = count * 0.1 + i * 0.5;
                     const sparkle1 =
@@ -1128,6 +1160,9 @@
         this._glowIntensity = defaultGlowIntensity;
         this._glowOpacity = defaultGlowOpacity;
         this._glowSpeed = animationSpeed;
+        this._canvasWidth = 0;
+        this._canvasHeight = 0;
+        this._glowCount = 0; // 発光用のカウンター
 
         // アニメーション用の追加プロパティ
         this._animationEnabled = false;
@@ -1181,12 +1216,22 @@
         }
 
         try {
+            const picture = this.picture();
+            const baseWidth = Math.max(
+                this.bitmap.width,
+                picture ? picture._canvasWidth || 0 : 0
+            );
+            const baseHeight = Math.max(
+                this.bitmap.height,
+                picture ? picture._canvasHeight || 0 : 0
+            );
+
             // エフェクトスプライトを作成
             this._glowEffect = new Sprite();
-            this._glowEffect.bitmap = new Bitmap(
-                this.bitmap.width,
-                this.bitmap.height
-            );
+            this._glowEffect.bitmap = new Bitmap(baseWidth, baseHeight);
+            this._glowEffect.anchor.set(this.anchor.x, this.anchor.y);
+            this._glowEffect.x = 0;
+            this._glowEffect.y = 0;
             this._glowEffect.blendMode = 1; // 加算合成
             this.addChild(this._glowEffect);
 
@@ -1199,19 +1244,46 @@
     // 発光ビットマップの更新
     Sprite_Picture.prototype._updateGlowBitmap = function (style, picture) {
         try {
+            const targetWidth = Math.max(
+                this.bitmap.width,
+                picture._canvasWidth || 0
+            );
+            const targetHeight = Math.max(
+                this.bitmap.height,
+                picture._canvasHeight || 0
+            );
+
+            // キャンパスサイズが変更された場合は再生成
+            if (
+                !this._glowEffect.bitmap ||
+                this._glowEffect.bitmap.width !== targetWidth ||
+                this._glowEffect.bitmap.height !== targetHeight
+            ) {
+                this._glowEffect.bitmap = new Bitmap(targetWidth, targetHeight);
+            }
+
+            // 親スプライトのアンカーに追従させる
+            this._glowEffect.anchor.set(this.anchor.x, this.anchor.y);
+
             const effectBitmap = this._glowEffect.bitmap;
             effectBitmap.clear();
 
             const ctx = effectBitmap.context;
+            const offsetX = (targetWidth - this.bitmap.width) / 2;
+            const offsetY = (targetHeight - this.bitmap.height) / 2;
+            this._glowEffect.x =
+                (targetWidth - this.bitmap.width) * (this.anchor.x - 0.5);
+            this._glowEffect.y =
+                (targetHeight - this.bitmap.height) * (this.anchor.y - 0.5);
 
             // 元の画像の形状を取得
             ctx.globalCompositeOperation = "source-over";
-            ctx.drawImage(this.bitmap.canvas, 0, 0);
+            ctx.drawImage(this.bitmap.canvas, offsetX, offsetY);
 
             // 発光スタイルを適用
             ctx.globalCompositeOperation = "source-in";
             ctx.fillStyle = picture._glowColor;
-            ctx.fillRect(0, 0, effectBitmap.width, effectBitmap.height);
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
 
             // ぼかし効果
             const blurAmount = Math.floor(picture._glowIntensity / 2);
@@ -1222,15 +1294,18 @@
                 ctx.filter = "none";
             }
 
-            // アニメーションカウントの更新（各ピクチャ固有のカウンターを更新）
-            picture._animationCount += picture._glowSpeed * 0.1;
+            // 発光用カウンターを更新（アニメーション用とは別に保持）
+            if (picture._glowCount === undefined) {
+                picture._glowCount = 0;
+            }
+            picture._glowCount += picture._glowSpeed * 0.1;
 
             // 発光スタイル特有のエフェクトを適用（各ピクチャ固有のカウンターを利用）
             if (style.applyEffect) {
                 style.applyEffect(
                     ctx,
                     effectBitmap,
-                    picture._animationCount,
+                    picture._glowCount,
                     picture._glowIntensity,
                     picture
                 );
@@ -1255,6 +1330,8 @@
             const intensity = Number(args.intensity || defaultGlowIntensity);
             const opacity = Number(args.opacity || defaultGlowOpacity);
             const speed = Number(args.speed || animationSpeed);
+            const canvasWidth = Number(args.canvasWidth || 0);
+            const canvasHeight = Number(args.canvasHeight || 0);
 
             if (pictureId > 0) {
                 const picture = $gameScreen.picture(pictureId);
@@ -1266,12 +1343,15 @@
                         picture._glowIntensity = intensity;
                         picture._glowOpacity = opacity;
                         picture._glowSpeed = speed;
+                        picture._canvasWidth = canvasWidth;
+                        picture._canvasHeight = canvasHeight;
+                        picture._glowCount = 0; // 適用時にリセット
                     }
                     picture._needsUpdate = true;
                     debugLog(
                         `ピクチャ#${pictureId}の発光設定: ${
                             enabled ? "有効" : "無効"
-                        }, スタイル=${style}, 色=${color}, 強度=${intensity}, 不透明度=${opacity}, 速度=${speed}`
+                        }, スタイル=${style}, 色=${color}, 強度=${intensity}, 不透明度=${opacity}, 速度=${speed}, キャンパス=${canvasWidth}x${canvasHeight}`
                     );
                 } else {
                     console.error(
@@ -1380,13 +1460,6 @@
         this._glowDirty = false;
         this._pictureId = pictureId;
 
-        // アニメーション用の変数を初期化
-        this._originalX = undefined; // updateで実際の座標を設定するため、未定義に
-        this._originalY = undefined;
-        this._originalRotation = 0;
-
-        // this._animationCount = 0; // ピクチャごとに固有カウンターはGame_Pictureに移動
-
         debugLog(`Sprite_Picture#${pictureId}初期化`);
     };
 
@@ -1401,18 +1474,13 @@
             return;
         }
 
-        // 初期化が必要な場合
-        if (!this._glowInitialized) {
-            this._glowInitialized = true;
-            // this._animationCount = 0; // ピクチャごとにアニメーションカウンターを持つ
-
-            // 元の状態を保存
-            this._originalScaleX = this.scale.x;
-            this._originalScaleY = this.scale.y;
-            this._originalX = this.x;
-            this._originalY = this.y;
-            this._originalRotation = this.rotation || 0;
-        }
+        // 毎フレーム、基準となる座標・スケール・回転を取得
+        // （元のupdateで最新のピクチャ情報が反映された後の値）
+        this._baseScaleX = this.scale.x;
+        this._baseScaleY = this.scale.y;
+        this._baseX = this.x;
+        this._baseY = this.y;
+        this._baseRotation = this.rotation || 0;
 
         // 発光効果とアニメーションの更新
         this.updateGlowEffect();
@@ -1440,10 +1508,10 @@
 
         // 元のビットマップのサイズを取得
         const originalWidth = this.bitmap
-            ? this.bitmap.width * this._originalScaleX
+            ? this.bitmap.width * this._baseScaleX
             : this.width || 0;
         const originalHeight = this.bitmap
-            ? this.bitmap.height * this._originalScaleY
+            ? this.bitmap.height * this._baseScaleY
             : this.height || 0;
 
         // スケール、オフセット、回転を取得
@@ -1466,15 +1534,15 @@
         const scaleOffsetY = (originalHeight * (scale.y - 1)) / 2;
 
         // 2. スケールを適用
-        this.scale.x = this._originalScaleX * scale.x;
-        this.scale.y = this._originalScaleY * scale.y;
+        this.scale.x = this._baseScaleX * scale.x;
+        this.scale.y = this._baseScaleY * scale.y;
 
         // 3. 位置を計算（元の座標 + スケールによるオフセット + アニメーションオフセット）
-        this.x = this._originalX - scaleOffsetX + offset.x;
-        this.y = this._originalY - scaleOffsetY + offset.y;
+        this.x = this._baseX - scaleOffsetX + offset.x;
+        this.y = this._baseY - scaleOffsetY + offset.y;
 
         // 4. 回転を適用
-        this.rotation = this._originalRotation + rotation;
+        this.rotation = this._baseRotation + rotation;
     };
 
     // スクリプト用関数
@@ -1485,7 +1553,9 @@
         color,
         intensity,
         opacity,
-        speed
+        speed,
+        canvasWidth,
+        canvasHeight
     ) {
         if (!$gameScreen || !$gameScreen.picture(pictureId)) {
             console.error(
@@ -1502,6 +1572,9 @@
             picture._glowIntensity = intensity || defaultGlowIntensity;
             picture._glowOpacity = opacity || defaultGlowOpacity;
             picture._glowSpeed = speed || animationSpeed;
+            picture._canvasWidth = Number(canvasWidth || 0);
+            picture._canvasHeight = Number(canvasHeight || 0);
+            picture._glowCount = 0; // 適用時にリセット
         }
         picture._needsUpdate = true;
         return true;
