@@ -139,7 +139,7 @@ https://github.com/user-attachments/assets/97bee934-857a-4fec-93a0-4afec0801234
 
 
 
-■ [DLリンク]()バグ発見によりDL中止中
+■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_NextRandomShop.js)
 
 ## 【更新履歴】
  - 1.0.0 初版
