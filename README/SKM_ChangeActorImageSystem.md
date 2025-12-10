@@ -2,6 +2,8 @@
 
 [最新版 DL](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ChangeActorImageSystem.js)
 
+Ver.upにより背景が透明になってしまった方は背景色の指定(#000000)をお願いします<br>
+
 <img src="../images/SKM_ChangeActorImageSystem1.png" width="400">
 
 
@@ -75,6 +77,11 @@ RPG ツクール MZ 用のプラグインで、ゲーム中にアクターの画
     - img/sv_actors/に配置
 
 ### 開発履歴
+v1.3.3 2025/12/10
+
+-   画像不足チェック機能を追加（テストプレイ時のみ）
+-   背景についての処理を見直し。事前ロードについて見直し。
+-   顔画像のサイズを自動調整するように変更。
 
 v1.3.2 2025/03/03 - コモンイベントからの呼び出し時にバグが出ていたのを修正<br>
 v1.3.1 2025/02/14 - アクター ID の変数指定を復活。<br>

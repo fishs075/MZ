@@ -5,9 +5,31 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
+//
+//=====================================
+// UTSU_ChangeActorImageSystem.js
+//=====================================
+// Copyright (c) 2020 Utsuda
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+// ----------------------------------------------------------------------------
+// [GitHub] : https://github.com/utsudashinou
+// [Twitter]: https://twitter.com/virtualUtsuda
+//=============================================================================
+//
+//=====================================
+// ChangeActorImageSystem.js
+//=====================================
+// Copyright (c) 2017 Tsumio
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+// ----------------------------------------------------------------------------
+// [Blog]   : http://ntgame.wpblog.jp/
+// [Twitter]: https://twitter.com/TsumioNtGame
+//=============================================================================
 /*:ja
  * @target MZ
- * @plugindesc アクター画像変更システム v1.3.2
+ * @plugindesc アクター画像変更システム v1.3.3
  * @author さかなのまえあし
  * @url https://github.com/fishs075/MZ/tree/main
  *
@@ -22,9 +44,9 @@
  * @default 816
  *
  * @param 顔画像の幅
- * @desc 顔画像の縦横幅です(デフォルト値:134)
+ * @desc 顔画像の縦横幅です(デフォルト値:0 (auto))
  * @type number
- * @default 134
+ * @default 0
  *
  * @param 読み込むファイル名
  * @desc 読み込むファイル名を設定します(デフォルト値:Actor)
@@ -72,7 +94,7 @@
  *
  * @param 背景の色
  * @desc 背景色(#FFFなど)を指定してください(背景画像が優先)。指定がない場合、マップ画面をぼかしたものを背景色として表示します。
- * @default
+ * @default #000000
  *
  * @param 1ページに表示する画像数
  * @desc 1ページに表示する画像数を指定してください。
@@ -180,7 +202,7 @@
  * @desc 画像のインデックス番号（1～8）
  * @type number
  * @min 1
- * @max 99  // 制限を緩和
+ * @max 8
  * @default 1
  *
  * @arg fileName
@@ -277,6 +299,9 @@
  * - 一応の対策として、画像がない場合は音がなって容姿の切り替えはできなくなっております。
  *
  * 【開発履歴】
+ * v1.3.3 2025/12/10 - 画像不足チェック機能を追加（テストプレイ時のみ）
+ *                   - 背景についての処理を見直し。事前ロードについて見直し。
+ *                   - 顔画像のサイズを自動調整するように変更。
  * v1.3.2 2025/03/03 - コモンイベントからの呼び出し時にバグが出ていたのを修正
  * v1.3.1 2025/02/14 - アクターIDの変数指定を復活
  * v1.3.0 2025/02/09 - リファクタリング後、元の動作を再現するまで修正。機能追加。
@@ -417,6 +442,50 @@ let globalConfigCAIS = null;
 (() => {
     "use strict";
 
+    // NW.js環境でのみ利用する画像存在チェック用
+    const IMAGE_EXTENSIONS_CAIS = [".png", ".jpg", ".webp", ".rpgmvp"];
+    function existsImageFile(folder, name) {
+        if (!Utils.isNwjs()) return true; // ブラウザ配信では判定不能なので許可扱い
+        try {
+            const fs = require("fs");
+            const path = require("path");
+            const base = path.dirname(process.mainModule.filename);
+            const dir = path.join(base, "img", folder);
+            return IMAGE_EXTENSIONS_CAIS.some((ext) =>
+                fs.existsSync(path.join(dir, name + ext))
+            );
+        } catch (e) {
+            console.error(e);
+            return true; // 判定失敗時は許可扱い
+        }
+    }
+
+    function collectMissingImages(
+        baseFileName,
+        maxImagesPerPage,
+        useSvActors,
+        faceOnlyMode = false
+    ) {
+        const missing = [];
+        if (!existsImageFile("faces", baseFileName)) {
+            missing.push(`img/faces/${baseFileName}`);
+        }
+        if (!faceOnlyMode) {
+            if (!existsImageFile("characters", baseFileName)) {
+                missing.push(`img/characters/${baseFileName}`);
+            }
+        }
+        if (useSvActors && !faceOnlyMode) {
+            for (let i = 1; i <= maxImagesPerPage; i++) {
+                const battlerName = `${baseFileName}_${i}`;
+                if (!existsImageFile("sv_actors", battlerName)) {
+                    missing.push(`img/sv_actors/${battlerName}`);
+                }
+            }
+        }
+        return missing;
+    }
+
     // 設定管理用のクラス
     class ConfigManager_CAIS {
         constructor(params) {
@@ -430,7 +499,12 @@ let globalConfigCAIS = null;
 
             // 顔画像設定
             this._faceSettings = {
-                width: Number(params["顔画像の幅"]) || 144,
+                // 0 指定で自動調整、それ以外は指定値（未指定はデフォルトにフォールバック）
+                width: (() => {
+                    const v = Number(params["顔画像の幅"]);
+                    if (Number.isNaN(v)) return 144;
+                    return v >= 0 ? v : 144;
+                })(),
                 fileName: String(params["読み込むファイル名"]) || "Actor",
                 maxImagesPerPage:
                     Number(params["1ページに表示する画像数"]) || 8,
@@ -447,8 +521,8 @@ let globalConfigCAIS = null;
 
             // 背景設定
             this._backgroundSettings = {
-                fileName: String(params["背景のファイル名"]) || "",
-                color: String(params["背景の色"]) || "",
+                fileName: (String(params["背景のファイル名"] || "") || "").trim(),
+                color: (String(params["背景の色"] || "") || "").trim(),
             };
 
             // システム設定
@@ -604,14 +678,27 @@ let globalConfigCAIS = null;
 
         // プリロード用のメソッド
         updatePreloadSettings(args) {
-            this._sceneState.actorNumber = Number(args.actorNumber);
-            if (args.actor_file_name !== "") {
-                this._sceneState.currentFileName = args.actor_file_name;
-            }
-            if (args.image_load_maxsize !== "") {
-                this._sceneState.maxImagesPerPage = Math.min(
-                    Number(args.image_load_maxsize),
-                    8
+            // 読み込む画像セット数（1以上の整数に丸める）
+            const parsedActorNumber = Number(args.actorNumber);
+            this._sceneState.actorNumber = Number.isInteger(parsedActorNumber)
+                ? Math.max(1, parsedActorNumber)
+                : 1;
+
+            // ファイル名（未指定時はパラメータ既定値を使用）
+            const fileNameArg =
+                (args.fileName ?? args.actor_file_name ?? "").trim();
+            this._sceneState.currentFileName =
+                fileNameArg !== "" ? fileNameArg : this.fileName;
+
+            // 1ページの画像数（未指定時はパラメータ既定値、最大8に制限）
+            const maxImagesRaw = args.maxImages ?? args.image_load_maxsize ?? "";
+            const parsedMaxImages = Number(maxImagesRaw);
+            if (maxImagesRaw === "" || Number.isNaN(parsedMaxImages)) {
+                this._sceneState.maxImagesPerPage = this.maxImagesPerPage;
+            } else {
+                this._sceneState.maxImagesPerPage = Math.max(
+                    1,
+                    Math.min(parsedMaxImages, 8)
                 );
             }
         }
@@ -702,6 +789,33 @@ let globalConfigCAIS = null;
 
                 globalConfigCAIS.updateFromPluginCommand(args);
 
+                // 画像不足チェック（事前テストと同様）
+                const maxImagesPerPage =
+                    globalConfigCAIS._sceneState.maxImagesPerPage ||
+                    globalConfigCAIS.maxImagesPerPage;
+                const missingImages = [];
+                for (let i = 1; i <= globalConfigCAIS.actorNumber; i++) {
+                    const baseFileName = globalConfigCAIS.currentFileName + i;
+                    missingImages.push(
+                        ...collectMissingImages(
+                            baseFileName,
+                            maxImagesPerPage,
+                            globalConfigCAIS.useSvActors,
+                            globalConfigCAIS.faceOnlyMode
+                        )
+                    );
+                }
+                if (missingImages.length > 0) {
+                    const message =
+                        "以下の画像が不足しています:\n" +
+                        [...new Set(missingImages)].join("\n");
+                    console.error(message);
+                    if (Utils.isOptionValid("test")) {
+                        alert(message);
+                    }
+                    return;
+                }
+
                 if (SceneManager._scene._choiceListWindow) {
                     SceneManager._scene._choiceListWindow.hide();
                 }
@@ -718,32 +832,55 @@ let globalConfigCAIS = null;
     );
 
     //画像事前ロード
-    PluginManager.registerCommand(
-        pluginName,
-        "Go_beforeloadImage",
-        function (args) {
-            globalConfigCAIS.updatePreloadSettings(args);
+    const preloadImagesHandler = function (args) {
+        globalConfigCAIS.updatePreloadSettings(args);
 
-            // 画像の事前ロード処理
-            for (let i = 1; i <= globalConfigCAIS.actorNumber; i++) {
-                const baseFileName = globalConfigCAIS.currentFileName + i;
+        const maxImagesPerPage =
+            globalConfigCAIS._sceneState.maxImagesPerPage ||
+            globalConfigCAIS.maxImagesPerPage;
 
-                ImageManager.loadFace(baseFileName);
-                ImageManager.loadCharacter(baseFileName);
+        // 事前チェックで不足画像を収集
+        const missingImages = [];
 
-                if (globalConfigCAIS.useSvActors) {
-                    for (
-                        let battlerIndex = 1;
-                        battlerIndex <= globalConfigCAIS.maxImagesPerPage;
-                        battlerIndex++
-                    ) {
-                        const battlerFileName = `${baseFileName}_${battlerIndex}`;
-                        ImageManager.loadSvActor(battlerFileName);
-                    }
+        // 画像の事前ロード処理
+        for (let i = 1; i <= globalConfigCAIS.actorNumber; i++) {
+            const baseFileName = globalConfigCAIS.currentFileName + i;
+
+            missingImages.push(
+                ...collectMissingImages(
+                    baseFileName,
+                    maxImagesPerPage,
+                    globalConfigCAIS.useSvActors,
+                    globalConfigCAIS.faceOnlyMode
+                )
+            );
+
+            ImageManager.loadFace(baseFileName);
+            ImageManager.loadCharacter(baseFileName);
+
+            if (globalConfigCAIS.useSvActors) {
+                for (let battlerIndex = 1; battlerIndex <= maxImagesPerPage; battlerIndex++) {
+                    const battlerFileName = `${baseFileName}_${battlerIndex}`;
+                    ImageManager.loadSvActor(battlerFileName);
                 }
             }
         }
-    );
+
+        if (missingImages.length > 0) {
+            const message =
+                "以下の画像が不足しています:\n" +
+                [...new Set(missingImages)].join("\n");
+            console.error(message);
+            if (Utils.isOptionValid("test")) {
+                alert(message);
+            }
+            return;
+        }
+    };
+
+    // 新定義（ヘッダと一致）と互換用の両方で登録
+    PluginManager.registerCommand(pluginName, "preloadImages", preloadImagesHandler);
+    PluginManager.registerCommand(pluginName, "Go_beforeloadImage", preloadImagesHandler);
 
     // 新しいプラグインコマンドの登録
     PluginManager.registerCommand(
@@ -922,9 +1059,10 @@ let globalConfigCAIS = null;
     };
 
     Scene_ChangeActorImageSystem.prototype.createBackgroundImage = function () {
-        if (globalConfigCAIS.backgroundImage !== undefined) {
+        const backgroundImage = (globalConfigCAIS.backgroundImage || "").trim();
+        if (backgroundImage) {
             const bitmap = ImageManager.loadParallax(
-                globalConfigCAIS.backgroundImage
+                backgroundImage
             );
             this.sprite_background = new Sprite(bitmap);
             this.sprite_background.x = 0;
@@ -935,7 +1073,8 @@ let globalConfigCAIS = null;
 
     Scene_ChangeActorImageSystem.prototype.createBackgroundNoImage =
         function () {
-            if (globalConfigCAIS.backgroundColor !== undefined) {
+            const backgroundColor = (globalConfigCAIS.backgroundColor || "").trim();
+            if (backgroundColor) {
                 this.createColorBackground();
             } else {
                 this.createSnapshotBackground();
@@ -949,7 +1088,9 @@ let globalConfigCAIS = null;
             Graphics.height
         );
         try {
-            bitmap.fillAll(globalConfigCAIS.backgroundColor);
+            bitmap.fillAll(
+                (globalConfigCAIS.backgroundColor || "").trim() || "#000000"
+            );
         } catch (e) {
             bitmap.fillAll("#000000");
         }
@@ -1350,6 +1491,21 @@ let globalConfigCAIS = null;
         Window_Command.prototype.initialize.call(this, rect);
     };
 
+    Window_ActorSelect.prototype.calcFaceSize = function (rect) {
+        const configured = globalConfigCAIS.faceWidth;
+        if (configured > 0) {
+            return configured;
+        }
+        // 自動調整: アイテム枠に収まる範囲で正方形サイズを決定
+        const margin = 24;
+        const maxSize = Math.min(
+            Math.max(rect.width - margin, 48),
+            Math.max(rect.height - margin, 48),
+            ImageManager.faceWidth
+        );
+        return maxSize;
+    };
+
     Window_ActorSelect.prototype.makeCommandList = function () {
         for (let i = 0; i < globalConfigCAIS.maxImagesPerPage; i++) {
             const actorNumber = i + 1;
@@ -1362,6 +1518,7 @@ let globalConfigCAIS = null;
         const offset = globalConfigCAIS.showCancelCommand ? -1 : 0;
         const currentImage =
             this._actor_image[globalConfigCAIS.selectingPage + offset];
+        const faceSize = this.calcFaceSize(rect);
 
         if (currentImage) {
             const adjustedIndex = index; // 表示用インデックスは0ベース
@@ -1373,12 +1530,12 @@ let globalConfigCAIS = null;
             this.drawFace(
                 currentImage,
                 adjustedIndex,
-                rect.x + (rect.width - globalConfigCAIS.faceWidth) / 2,
+                rect.x + (rect.width - faceSize) / 2,
                 faceY,
                 ImageManager.faceWidth,
                 ImageManager.faceHeight,
-                globalConfigCAIS.faceWidth,
-                globalConfigCAIS.faceWidth
+                faceSize,
+                faceSize
             );
 
             // 顔画像のみモードでない場合のみ、キャラクターとバトラーを描画
@@ -1438,7 +1595,7 @@ let globalConfigCAIS = null;
         index,
         rect
     ) {
-        const faceHeight = globalConfigCAIS.faceWidth;
+        const faceHeight = this.calcFaceSize(rect);
         const baseY = rect.y + faceHeight + 90;
         const centerX = rect.x - 20 + rect.width / 2;
         const spacing = 20;
@@ -1457,7 +1614,7 @@ let globalConfigCAIS = null;
         rect
     ) {
         // フェイス画像の高さに基づいて表示位置を調整
-        const faceHeight = globalConfigCAIS.faceWidth;
+        const faceHeight = this.calcFaceSize(rect);
         const baseY = rect.y + faceHeight + 90; // 余白を増やす
 
         this.drawCharacter(imageName, index, rect.x + rect.width / 2, baseY);
