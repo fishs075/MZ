@@ -1,3 +1,7 @@
+![Plugin Version](https://img.shields.io/badge/version-1.3.3-blue)
+![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
+![License](https://img.shields.io/badge/license-MIT-brightgreen)
+
 # アクター画像変更システム (RPG Maker MZ)
 
 [最新版 DL](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ChangeActorImageSystem.js)
