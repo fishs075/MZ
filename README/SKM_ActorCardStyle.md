@@ -7,6 +7,10 @@ DL準備中<br>
 <img src="./images/SKM_ActorCardStyle2.png" width="400">
 
 
+https://github.com/user-attachments/assets/c2326919-1ac8-4b7e-af14-2ddcef50a0a4
+
+
+
 ### 特徴
 -   背景のグラデーション表示
 -   パターンサイズの可変
