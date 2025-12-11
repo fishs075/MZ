@@ -4,8 +4,8 @@
 
 # SKM_MenuCommandSort
 
-RPGツクールMZ用 メニューコマンド並べ替え＆スイッチ制御プラグイン
-![](https://img.shields.io/badge/Link-Download-white?labelColor=orange)
+RPGツクールMZ用 メニューコマンド並べ替え＆スイッチ制御プラグイン<br>
+![](https://img.shields.io/badge/Link-Download-white?labelColor=orange)<br>
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_MenuCommandSort.js)
 
 ## 概要
