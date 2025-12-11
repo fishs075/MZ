@@ -3,7 +3,8 @@
 ![License](https://img.shields.io/badge/license-Free-brightgreen)
 
 # カラフルメニューカスタマイズプラグイン
-
+<br>
+![](https://img.shields.io/badge/Link-Download-white?labelColor=orange)<br>
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_calfulmenu.js)
 
 
