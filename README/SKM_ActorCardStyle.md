@@ -2,7 +2,8 @@
 
 Ver2<br>
 <br>
-DL準備中<br>
+![Plugin Version](https://img.shields.io/badge/DL-yellow)
+[最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle_v2.js)
 <br>
 ## 概要
 
