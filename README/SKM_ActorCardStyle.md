@@ -1,5 +1,5 @@
 ![RPG Maker MZ](https://img.shields.io/badge/RPG%20Maker-MZ-green)
-![License](https://img.shields.io/badge/license-Free-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
 # アクターカードスタイルプラグイン
 
