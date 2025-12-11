@@ -52,6 +52,9 @@
  * - コモンイベントはメニュー画面を閉じずに実行されます。
  *   場所移動などマップ切り替えを伴う処理は正しく動かない場合があります。
  *
+ * ■ Special Thanks
+ * Yana (MV Plug-in MenuCommandSort.js)
+ * 
  *
  * @param CommandOrders
  * @text コマンド並び替え

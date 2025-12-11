@@ -57,7 +57,12 @@ SKM_MenuCommandSortは、メニュー画面のコマンド（「アイテム」�
 - コモンイベントはメニュー画面を閉じずに実行されます。場所移動などのマップシーン切り替えを伴う処理は正しく動作しない場合があります。
 
 ## 作者
+
 sakananomaeasi (with AI support)
+
+## Special Thanks
+
+Yana (MV Plug-in MenuCommandSort.js)
 
 ## ライセンス
 MIT License
