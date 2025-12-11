@@ -813,8 +813,11 @@
     function drawGrid(ctx, x, y, w, h, color, tile) {
         const spacing = Math.max(8, tile);
         const thickness = Math.max(1, Math.floor(tile / 16));
-        for (let i = 0; i < w; i += spacing) ctx.fillRect(x + i, y, thickness, h, color);
-        for (let i = 0; i < h; i += spacing) ctx.fillRect(x, y + i, w, thickness, color);
+        ctx.save();
+        ctx.fillStyle = color;
+        for (let i = 0; i < w; i += spacing) ctx.fillRect(x + i, y, thickness, h);
+        for (let i = 0; i < h; i += spacing) ctx.fillRect(x, y + i, w, thickness);
+        ctx.restore();
     }
 
     function drawGridDiagonal(ctx, x, y, w, h, color, tile) {
@@ -839,11 +842,14 @@
 
     function drawCheckered(ctx, x, y, w, h, color, tile) {
         const size = Math.max(8, Math.floor(tile / 2));
+        ctx.save();
+        ctx.fillStyle = color;
         for (let i = 0; i < w; i += size) {
             for (let j = 0; j < h; j += size) {
-                if ((i + j) % (size * 2) === 0) ctx.fillRect(x + i, y + j, size, size, color);
+                if ((i + j) % (size * 2) === 0) ctx.fillRect(x + i, y + j, size, size);
             }
         }
+        ctx.restore();
     }
 
     function drawDiamond(ctx, x, y, w, h, color, tile) {
