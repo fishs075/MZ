@@ -9,6 +9,8 @@ RPGツクールMZ用プラグイン。装備シーン右側に「パーティ選
 
 
 ## DL リンク
+最新版をダウンロード<br>
+[![](https://img.shields.io/badge/Link-Download-white?labelColor=orange)](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_EquipPartySelect.js)<br>
 [ダウンロード先](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_EquipPartySelect.js)
 
 ## サンプル
