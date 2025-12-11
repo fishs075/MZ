@@ -1066,11 +1066,19 @@
                 const r = Math.max(rect.width, rect.height) * settings.radialRadius;
                 g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
             } else {
-                // linear
+                // linear: 角度を任意に通す。長さは対角線ベースで中心を通るようにする。
                 const ang = (settings.gradientAngle % 360) * (Math.PI / 180);
-                const dx = Math.cos(ang) * rect.width;
-                const dy = Math.sin(ang) * rect.height;
-                g = ctx.createLinearGradient(rect.x, rect.y, rect.x + dx, rect.y + dy);
+                const len = Math.hypot(rect.width, rect.height); // 対角線長を基準にして全方向で十分な長さを確保
+                const vx = Math.cos(ang) * len;
+                const vy = Math.sin(ang) * len;
+                const cx = rect.x + rect.width / 2;
+                const cy = rect.y + rect.height / 2;
+                g = ctx.createLinearGradient(
+                    cx - vx / 2,
+                    cy - vy / 2,
+                    cx + vx / 2,
+                    cy + vy / 2
+                );
             }
             const c1 = darkenColorString(settings.gradientStartColor, rate);
             const c2 = darkenColorString(settings.gradientEndColor, rate);
