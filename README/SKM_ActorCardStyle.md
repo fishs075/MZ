@@ -2,7 +2,7 @@
 
 Ver2<br>
 <br>
-![Plugin Version](https://img.shields.io/badge/DL-Link-white?labelColor=orange)
+![Plugin Version](https://img.shields.io/badge/Link-Download-white?labelColor=orange)
 [最新版をダウンロード](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle_v2.js)
 <br>
 ## 概要
