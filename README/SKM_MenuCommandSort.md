@@ -5,7 +5,7 @@
 # SKM_MenuCommandSort
 
 RPGツクールMZ用 メニューコマンド並べ替え＆スイッチ制御プラグイン
-
+![](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_ActorCardStyle_v2.js)<br>
 ■ [DLリンク](https://raw.githubusercontent.com/fishs075/MZ/refs/heads/main/SKM_MenuCommandSort.js)
 
 ## 概要
